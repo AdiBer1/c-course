@@ -1,0 +1,127 @@
+# Builds, tests and scores a student's pull request.
+#
+# Security model:
+#   - read-only token, no secrets, plain `pull_request` (never pull_request_target)
+#   - the scripts, tests and Makefiles that do the scoring come from `main`
+#     (the "trusted" copy); only the task's STUDENT_FILES are taken from the PR
+#   - the score comment is posted by score-comment.yml, which never runs PR code
+name: Check
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      OUT: ${{ runner.temp }}/out
+    steps:
+      - name: Check out the pull request merged into main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+          path: pr
+
+      - name: Prepare a trusted copy of main
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          mkdir -p "$OUT"
+          echo "$PR_NUMBER" > "$OUT/pr-number.txt"
+          cd pr
+          echo "BASE_SHA=$(git rev-parse HEAD^1)" >> "$GITHUB_ENV"
+          echo "MERGE_SHA=$(git rev-parse HEAD)"  >> "$GITHUB_ENV"
+          git worktree add --detach ../trusted HEAD^1
+
+      - name: Which task does this PR touch?
+        id: task
+        working-directory: trusted
+        run: |
+          set -o pipefail
+          if GUARD_JSON="$OUT/guard.json" bash scripts/detect-task.sh "$BASE_SHA" "$MERGE_SHA" > "$RUNNER_TEMP/task.txt"; then
+            task=$(cat "$RUNNER_TEMP/task.txt")
+            echo "task=$task" >> "$GITHUB_OUTPUT"
+            echo "Task: $task"
+          else
+            cat "$RUNNER_TEMP/task.txt" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+      - name: Only allowed files changed?
+        working-directory: trusted
+        env:
+          TASK: ${{ steps.task.outputs.task }}
+        run: |
+          set -o pipefail
+          GUARD_JSON="$OUT/guard.json" bash scripts/check-allowed-files.sh "$TASK" "$BASE_SHA" "$MERGE_SHA" \
+            | tee "$RUNNER_TEMP/allowed.txt" || { cat "$RUNNER_TEMP/allowed.txt" >> "$GITHUB_STEP_SUMMARY"; exit 1; }
+
+      - name: Branch name note
+        env:
+          TASK: ${{ steps.task.outputs.task }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          num=$(basename "$TASK" | cut -c1-2)
+          if [ "$HEAD_REF" != "task-$num" ]; then
+            echo "Note: branch is '$HEAD_REF'; the convention is 'task-$num'." | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Copy the student's files into the trusted copy
+        working-directory: trusted
+        env:
+          TASK: ${{ steps.task.outputs.task }}
+        run: |
+          files=$(make -s --no-print-directory -C "$TASK" config | sed -n 's/^STUDENT_FILES=//p')
+          for f in $files; do
+            if git cat-file -e "$MERGE_SHA:$TASK/$f" 2>/dev/null; then
+              git show "$MERGE_SHA:$TASK/$f" > "$TASK/$f"
+            else
+              rm -f "$TASK/$f"
+            fi
+          done
+
+      - name: Install cppcheck
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends cppcheck > /dev/null
+          cppcheck --version
+          # AddressSanitizer in older gcc breaks with the high ASLR entropy of newer kernels.
+          sudo sysctl -w vm.mmap_rnd_bits=28
+
+      - name: Build, test and score
+        working-directory: trusted
+        env:
+          TASK: ${{ steps.task.outputs.task }}
+        run: |
+          bash scripts/score.sh "$TASK"
+          cp "$TASK/build/score.json" "$TASK/build/score.md" "$OUT/"
+          cat "$TASK/build/score.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the result for the comment workflow
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: score
+          path: ${{ runner.temp }}/out/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Pass threshold (60)
+        run: |
+          total=$(jq -r '.total' "$OUT/score.json")
+          echo "Score: $total / 100"
+          if [ "$total" -lt 60 ]; then
+            echo "::error::Score $total is below 60. Keep working, run 'make score' locally and push again."
+            exit 1
+          fi

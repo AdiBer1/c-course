@@ -1,0 +1,181 @@
+# Posts the score of a check run as ONE comment on the pull request and
+# updates that same comment on every new push.
+#
+# Security model:
+#   - runs from main (workflow_run), so a PR cannot change this file
+#   - never checks out or runs PR code
+#   - the artifact from the check run is untrusted data: it is size-limited,
+#     parsed, validated field by field, and the comment text is built here
+#     from those values (the uploaded markdown is never posted)
+#   - the PR number from the artifact must belong to the PR whose head commit
+#     was checked, otherwise nothing is posted
+#   - `actions: read` is needed only to download the artifact
+name: Score comment
+
+on:
+  workflow_run:
+    workflows: [Check]
+    types: [completed]
+
+permissions:
+  pull-requests: write
+  actions: read
+
+jobs:
+  comment:
+    if: github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion != 'cancelled'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Download the check result (untrusted)
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: score
+          path: ${{ runner.temp }}/score
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Post or update the score comment
+        uses: actions/github-script@v7
+        env:
+          RESULT_DIR: ${{ runner.temp }}/score
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const run = context.payload.workflow_run;
+            const MARKER = '<!-- c-course-score -->';
+            const dir = process.env.RESULT_DIR;
+
+            // ---------- read untrusted files safely
+            function readSmall(name, maxBytes) {
+              const p = path.join(dir, name);
+              try {
+                const st = fs.lstatSync(p);
+                if (!st.isFile() || st.size > maxBytes) return null;
+                return fs.readFileSync(p, 'utf8');
+              } catch { return null; }
+            }
+            function readJson(name) {
+              const t = readSmall(name, 64 * 1024);
+              if (t === null) return null;
+              try { return JSON.parse(t); } catch { return null; }
+            }
+            const isInt = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi;
+            const isBool = (v) => typeof v === 'boolean';
+            const safeName = (s) => typeof s === 'string' && /^[A-Za-z0-9._\/ -]{1,200}$/.test(s) ? s : '(unusual file name)';
+
+            // ---------- which PR? (must match the checked commit)
+            const prText = (readSmall('pr-number.txt', 32) || '').trim();
+            if (!/^[0-9]{1,7}$/.test(prText)) { core.info('No valid PR number; nothing to do.'); return; }
+            const prNumber = Number(prText);
+            const { owner, repo } = context.repo;
+            let pr;
+            try { pr = (await github.rest.pulls.get({ owner, repo, pull_number: prNumber })).data; }
+            catch { core.info('PR not found; nothing to do.'); return; }
+            if (pr.head.sha !== run.head_sha) { core.info('PR head does not match the checked commit; skipping.'); return; }
+            if (pr.state !== 'open') { core.info('PR is closed; skipping.'); return; }
+
+            // ---------- independent check: only task src/ and ANSWERS.md may change
+            const files = await github.paginate(github.rest.pulls.listFiles, { owner, repo, pull_number: prNumber, per_page: 100 });
+            const protectedChanged = files
+              .flatMap(f => [f.filename, f.previous_filename].filter(Boolean))
+              .filter(n => !/^tasks\/[^\/]+\/(src\/[^\/]+|ANSWERS\.md)$/.test(n));
+
+            // ---------- validate the score
+            function validScore(s) {
+              if (!s || typeof s !== 'object' || s.version !== 1) return false;
+              if (typeof s.task !== 'string' || !/^[0-9]{2}-[a-z0-9-]{1,40}$/.test(s.task)) return false;
+              if (!isInt(s.stage, 0, 6) || !isBool(s.compiled) || !isInt(s.total, 0, 100)) return false;
+              const t = s.tests, q = s.quality;
+              if (!t || !isInt(t.points, 0, 70) || !isInt(t.passed, 0, 1000) || !isInt(t.total, 0, 1000) || t.passed > t.total) return false;
+              if (!isBool(t.timed_out) || !isBool(t.crashed) || !Array.isArray(t.failed) || t.failed.length > 1000) return false;
+              if (!t.failed.every(n => typeof n === 'string' && /^test_[A-Za-z0-9_]{1,120}$/.test(n))) return false;
+              if (!q || !isInt(q.points, 0, 30) || !q.deductions || typeof q.deductions !== 'object') return false;
+              const keys = ['compiler_warnings', 'cppcheck', 'sanitizer_reports', 'forbidden_symbols', 'answers_empty'];
+              if (Object.keys(q.deductions).sort().join() !== [...keys].sort().join()) return false;
+              for (const k of keys) {
+                const d = q.deductions[k];
+                if (!d || !isInt(d.count, 0, 10000) || !isInt(d.each, 0, 100) || !isInt(d.points, 0, 1000000)) return false;
+              }
+              if (!isBool(q.deductions.cppcheck.active)) return false;
+              if (s.compiled && s.total !== t.points + q.points) return false;
+              if (!s.compiled && s.total !== 0) return false;
+              return true;
+            }
+
+            const score = readJson('score.json');
+            const guard = readJson('guard.json');
+            const short = run.head_sha.slice(0, 7);
+            const runLink = `[check run](${run.html_url})`;
+            let body = `${MARKER}\n`;
+
+            if (protectedChanged.length > 0) {
+              body += `## ⚠️ This PR changes protected files\n\n`;
+              body += `Only \`tasks/<task>/src/\` files listed in the task and \`ANSWERS.md\` may change. `;
+              body += `Any score for this PR is **not valid** until these changes are undone:\n\n`;
+              for (const n of protectedChanged.slice(0, 30)) body += `- \`${safeName(n)}\`\n`;
+              if (protectedChanged.length > 30) body += `- … and ${protectedChanged.length - 30} more\n`;
+              body += `\nUndo them (\`git checkout upstream/main -- <file>\`), commit and push again. Details: ${runLink}.\n`;
+            } else if (score && validScore(score)) {
+              const s = score, t = s.tests, q = s.quality, d = q.deductions;
+              const ok = s.total >= 60;
+              body += `## ${ok ? '✅' : '❌'} Score: ${s.total} / 100\n\n`;
+              body += `Task \`${s.task}\` · commit \`${short}\` · pass threshold 60\n\n`;
+              if (!s.compiled) {
+                body += `**The code does not compile, so the score is 0.** Run \`make\` in the task folder and fix the first error.\n\n`;
+              } else {
+                body += `| Part | Points |\n|---|---|\n`;
+                body += `| Tests (${t.passed} of ${t.total} passed) | ${t.points} / 70 |\n`;
+                body += `| Code quality | ${q.points} / 30 |\n\n`;
+                const rows = [
+                  ['Compiler warnings', d.compiler_warnings],
+                  [d.cppcheck.active ? 'cppcheck findings' : 'cppcheck findings (notes only before stage 5)', d.cppcheck],
+                  ['Sanitizer reports', d.sanitizer_reports],
+                  ['Forbidden functions', d.forbidden_symbols],
+                  ['`ANSWERS.md` left empty', d.answers_empty],
+                ].filter(([, v]) => v.count > 0);
+                if (rows.length) {
+                  body += `| Deduction | Count | Points |\n|---|---|---|\n`;
+                  for (const [label, v] of rows) body += `| ${label} | ${v.count} | ${v.points > 0 ? '−' + v.points : '0'} |\n`;
+                  body += `\n`;
+                }
+                if (t.failed.length) {
+                  body += `<details><summary>Failing tests (${t.failed.length})</summary>\n\n`;
+                  for (const n of t.failed.slice(0, 40)) body += `- \`${n}\`\n`;
+                  body += `\n</details>\n\n`;
+                }
+                if (t.timed_out) body += `⏱️ Some tests hit the 5-second limit: infinite loop or too slow.\n\n`;
+                if (t.crashed) body += `💥 Some tests crashed. Run \`make test\` to see why.\n\n`;
+              }
+              body += ok
+                ? `**Next step:** book your defense. Be ready to explain every line.\n`
+                : `**Next step:** keep working. Run \`make score\` locally, then push again; this comment updates.\n`;
+              body += `\nFull report (warnings, sanitizer locations, messages): ${runLink} → Summary.\n`;
+            } else if (guard && typeof guard === 'object' && guard.ok === false) {
+              const list = Array.isArray(guard.files) ? guard.files.slice(0, 30).map(safeName) : [];
+              body += `## ❌ Not scored\n\n`;
+              if (guard.reason === 'multiple_tasks') {
+                body += `This PR touches more than one task. **One PR = exactly one task.** Tasks touched:\n\n`;
+              } else if (guard.reason === 'no_task') {
+                body += `This PR does not change any task folder. Files changed:\n\n`;
+              } else if (guard.reason === 'forbidden_files') {
+                body += `This PR changes files that are not on the task's list of student files:\n\n`;
+              } else {
+                body += `The pre-checks failed.\n\n`;
+              }
+              for (const n of list) body += `- \`${n}\`\n`;
+              body += `\nFix it, push again, and this comment updates. Details: ${runLink}.\n`;
+            } else {
+              body += `## ⚠️ No score\n\nThe check finished (\`${run.conclusion}\`) without a readable result. See the ${runLink}.\n`;
+            }
+
+            // ---------- one comment per PR: update it if it exists
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: prNumber, per_page: 100 });
+            const mine = comments.find(c => c.user && c.user.login === 'github-actions[bot]' && typeof c.body === 'string' && c.body.startsWith(MARKER));
+            if (mine) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number: prNumber, body });
+            }
