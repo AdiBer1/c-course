@@ -1,0 +1,4 @@
+TASK_STAGE      := 1
+STUDENT_FILES   := src/convert.c ANSWERS.md
+FORBIDDEN_SYMS  :=
+EXTRA_CFLAGS    :=
