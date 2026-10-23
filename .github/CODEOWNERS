@@ -1,0 +1,6 @@
+# The teacher owns everything...
+*                     @adiber1
+
+# ...except the files students work in (no owner).
+/tasks/*/src/
+/tasks/*/ANSWERS.md
