@@ -1,0 +1,4 @@
+TASK_STAGE      := 0
+STUDENT_FILES   := src/max3.c ANSWERS.md
+FORBIDDEN_SYMS  :=
+EXTRA_CFLAGS    :=
