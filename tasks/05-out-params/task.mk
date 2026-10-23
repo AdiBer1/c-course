@@ -1,0 +1,4 @@
+TASK_STAGE      := 2
+STUDENT_FILES   := src/outparams.c ANSWERS.md
+FORBIDDEN_SYMS  :=
+EXTRA_CFLAGS    :=
