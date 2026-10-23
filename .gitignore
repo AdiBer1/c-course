@@ -1,0 +1,17 @@
+# Reference solutions live only on the teacher's machine. NEVER commit them.
+solutions/
+/solutions
+
+# Build output
+build/
+*.o
+*.a
+*.out
+*.dSYM/
+
+# Program built by the student's own Makefile in task 00
+tasks/00-hello-toolchain/src/hello
+
+# Editor / OS noise
+.DS_Store
+*.swp
