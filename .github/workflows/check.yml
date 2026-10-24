@@ -23,8 +23,6 @@ jobs:
     name: check
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    env:
-      OUT: ${{ runner.temp }}/out
     steps:
       - name: Check out the pull request merged into main
         uses: actions/checkout@v4
@@ -37,6 +35,9 @@ jobs:
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
+          # runner.temp is not available at job level, so OUT is set here for all later steps
+          OUT="$RUNNER_TEMP/out"
+          echo "OUT=$OUT" >> "$GITHUB_ENV"
           mkdir -p "$OUT"
           echo "$PR_NUMBER" > "$OUT/pr-number.txt"
           cd pr
