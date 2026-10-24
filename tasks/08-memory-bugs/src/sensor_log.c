@@ -22,7 +22,7 @@ void log_init(void)
 
 bool log_add(int16_t value)
 {
-    if (count > LOG_CAPACITY) {
+    if (count>=LOG_CAPACITY)  {
         return false;
     }
     values[count] = value;
