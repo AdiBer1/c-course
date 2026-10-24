@@ -90,9 +90,14 @@ unchanged.
 Push to `main` directly (you are in the bypass list). Before pushing:
 
 ```bash
-scripts/verify-all.sh          # every task: starter < 60, solution = 100
+scripts/sync-solutions.sh      # copy the changed task files into solutions/ (keeps your solution files)
+scripts/verify-all.sh          # every task: starter < 60, solution = 100, solutions/ up to date
 git status                     # nothing from solutions/ may be staged
 ```
+
+Each `solutions/NN-name/` is a complete copy of its task with the reference
+solution in place, so you can also work there directly: `make test`,
+`make score`.
 
 `verify-all.sh` needs Linux (WSL, or Docker on a Mac), like CI. macOS's
 clang has no leak detection and macOS has no `timeout` command, so results

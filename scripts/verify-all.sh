@@ -8,7 +8,9 @@
 # For each task, in a temporary copy of the repo:
 #   1. the untouched starter must score BELOW 60
 #   2. with the solution files copied over it, the task must score exactly 100
-#   3. the solution may only contain files listed in STUDENT_FILES
+#   3. solutions/NN-name/ is a complete copy of the task: every given file is
+#      identical to tasks/NN-name/ (refresh with scripts/sync-solutions.sh),
+#      and every STUDENT_FILES entry is present
 
 set -uo pipefail
 
@@ -39,19 +41,35 @@ for task_dir in "$ROOT"/tasks/*/; do
     starter=$(score_of "$work"); starter=${starter:-?}
     [[ $starter =~ ^[0-9]+$ ]] && [ "$starter" -lt 60 ] || problems+=("starter scores $starter (must be < 60)")
 
-    # 3. solution files must be student files
+    # 3. the solution folder is a complete, up-to-date copy of the task
     allowed=$(make -s --no-print-directory -C "$work" config | sed -n 's/^STUDENT_FILES=//p')
     if [ ! -d "$SOL/$name" ]; then
         problems+=("no solution in solutions/$name")
         solution="-"
     else
-        while IFS= read -r f; do
-            rel=${f#"$SOL/$name/"}
-            case " $allowed " in *" $rel "*) ;; *) problems+=("solution file $rel is not in STUDENT_FILES") ;; esac
-        done < <(find "$SOL/$name" -type f ! -name '.DS_Store')
+        for f in $allowed; do
+            [ -e "$SOL/$name/$f" ] || problems+=("solution is missing $f")
+        done
+        while IFS= read -r line; do
+            problems+=("differs from the task (run scripts/sync-solutions.sh $name): $line")
+        done < <(cd "$ROOT/tasks/$name" && find . -type f ! -path './build/*' ! -name .DS_Store ! -name '*.o' ! -path './src/hello' | sed 's#^\./##' | sort |
+                 while IFS= read -r f; do
+                     case " $allowed " in *" $f "*) continue ;; esac
+                     cmp -s "$f" "$SOL/$name/$f" || echo "$f"
+                 done
+                 cd "$SOL/$name" && find . -type f ! -path './build/*' ! -name .DS_Store ! -name '*.o' ! -path './src/hello' | sed 's#^\./##' | sort |
+                 while IFS= read -r f; do
+                     case " $allowed " in *" $f "*) continue ;; esac
+                     [ -e "$ROOT/tasks/$name/$f" ] || echo "$f (extra file)"
+                 done)
 
-        # 2. solution
-        rsync -a --exclude .DS_Store "$SOL/$name/" "$work/"
+        # 2. solution: only the student files are copied over the task
+        for f in $allowed; do
+            if [ -e "$SOL/$name/$f" ]; then
+                mkdir -p "$(dirname "$work/$f")"
+                cp "$SOL/$name/$f" "$work/$f"
+            fi
+        done
         bash "$TMP/repo/scripts/score.sh" "$work" >"$TMP/solution.md" 2>&1 || problems+=("score.sh failed on solution")
         solution=$(score_of "$work"); solution=${solution:-?}
         [ "$solution" = 100 ] || problems+=("solution scores $solution (must be 100)")
