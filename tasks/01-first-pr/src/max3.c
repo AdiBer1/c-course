@@ -2,6 +2,6 @@
 
 int max3(int a, int b, int c)
 {
-    /* first attempt: not finished yet */
-    return a;
+    int best = (a > b) ? a : b;
+    return (best > c) ? best : c;
 }
