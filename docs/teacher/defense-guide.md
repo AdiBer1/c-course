@@ -4,6 +4,7 @@ About **5 minutes** per task, after the PR has reached 60+.
 
 ## Before (1 minute, alone)
 
+- Who is waiting: *Pull requests* → filter `is:open label:passed`.
 - Open the PR: score comment, *Files changed*, *Commits*.
 - Open the task's `TUTOR.md` → **Defense questions**, and the student's
   `ANSWERS.md` in the PR.
@@ -36,7 +37,8 @@ About **5 minutes** per task, after the PR has reached 60+.
 
 ## After
 
-- Write one line in the PR (date, outcome), then **Close** the PR (never merge).
+- Add the label **`defended`**, write one line in the PR (date, outcome), then
+  **Close** the PR (never merge).
 - Record the result in your own grade sheet. How the CI score and the defense
   combine into the final grade is your decision; the repository only produces
   the CI score.

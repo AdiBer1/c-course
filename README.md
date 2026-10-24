@@ -127,6 +127,9 @@ git push
 
 CI runs again and the **same** score comment is updated. Do not open a new PR.
 
+CI also labels your PR: `task-NN`, and `passed` (60+) or `needs-fix`. After
+the defense the teacher adds `defended`.
+
 ### When the score is 60+
 
 Book your defense. After the defense the teacher **closes** the PR. PRs are

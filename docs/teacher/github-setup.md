@@ -39,7 +39,30 @@ or click it together:
 PRs are never merged, so the rules mainly protect `main` from accidents and
 make the `check` result visible on every PR.
 
-## 3. Actions settings
+## 3. Labels
+
+Create the PR labels once (needs `gh auth login`):
+
+```bash
+scripts/setup-labels.sh
+```
+
+| Label | Meaning | Set by |
+|---|---|---|
+| `task-00` … `task-21` | which task the PR is for | CI, from the PR's files |
+| `passed` | CI score is 60 or more | CI |
+| `needs-fix` | below 60, or not scored (wrong files, two tasks, ...) | CI |
+| `defended` | oral defense done | **you**, by hand |
+
+CI updates `passed` / `needs-fix` on every push. Once a PR has `defended`,
+CI stops changing its status label (and removes `passed` / `needs-fix`).
+Useful filters in the *Pull requests* tab: `is:pr is:open label:passed` (who
+is waiting for a defense), `label:task-07`.
+
+If the labels were never created, the score comment still works; the
+*Score comment* run just shows a warning.
+
+## 4. Actions settings
 
 **Settings → Actions → General:**
 
@@ -72,7 +95,7 @@ Actions → General → Workflow permissions** is not set to block GitHub Action
 from creating pull request comments, and that the workflow file on `main` is
 unchanged.
 
-## 4. Reviewing a PR and closing it after the defense
+## 5. Reviewing a PR and closing it after the defense
 
 1. Open the PR. The **score comment** shows the total, the parts, the
    deductions and failing tests. **Checks → check → Summary** has the full
@@ -82,10 +105,10 @@ unchanged.
 3. **Commits**: look at the history. Steady small commits are a good sign;
    one giant commit is a reason to ask more questions in the defense.
 4. Hold the defense (see `defense-guide.md`).
-5. Write a short comment (date, outcome), then **Close pull request**. Do
-   **not** merge.
+5. Add the label **`defended`**, write a short comment (date, outcome),
+   then **Close pull request**. Do **not** merge.
 
-## 5. Updating a task later
+## 6. Updating a task later
 
 Push to `main` directly (you are in the bypass list). Before pushing:
 
