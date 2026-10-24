@@ -55,7 +55,12 @@ make the validation and grading results visible on every PR.
 | Quality / Memory Analysis | Valgrind, from stage 2 (finds uninitialised reads) | never (informational) |
 | Grading / Automated Score | `score.sh` report phase: the final 0–100, red below 60 | this **is** the score |
 
-Plus `PR / PR Validation / Title Format` (workflow `pr-title.yml`).
+Plus, from workflow `pr-title.yml` (they re-run when the student edits the
+PR, never run PR code and have no permissions):
+`PR / PR Validation / Title Format` (`[Task NN] - Full Name`) and
+`PR / PR Validation / Description` (red if `Full name:` is empty; an empty
+task number, unticked checklist items and unanswered reflection questions
+are listed as notes).
 
 The score is computed **once**, by `scripts/score.sh`, exactly like
 `make score`: each job runs one of its phases and passes its logs on as an

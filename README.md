@@ -113,8 +113,11 @@ git push -u origin task-07
 3. **Title:** exactly `[Task 07] - Full Name` (two-digit task number, then
    your full name), e.g. `[Task 07] - Dana Cohen`. A check called `title`
    turns red if the format is wrong; fix the title and it re-runs by itself.
-4. Fill in the template (name, task, checklist, the three reflection
-   questions) and press **Create pull request**.
+4. Fill in the template and press **Create pull request**. **Full name is
+   required** (the check `PR Validation / Description` turns red without it);
+   please also fill in the task number, tick the checklist and answer the
+   three reflection questions. You can edit the description later; the
+   check re-runs by itself.
 
 The repository is **public**: never write your student ID, phone number or
 other personal details in a PR.
