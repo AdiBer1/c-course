@@ -8,6 +8,8 @@
 #   make         build everything (your code + the tests), do not run
 #   make test    build and run the tests
 #   make score   compute your score exactly like CI does
+#   make memcheck   run the tests under Valgrind (optional, needs valgrind)
+#   make format     show clang-format differences (optional, changes nothing)
 #   make clean   delete the build/ folder
 #
 # Variables a task.mk may set:
@@ -68,7 +70,7 @@ LIB_OBJS  := $(BUILD)/lib/unity.o $(BUILD)/lib/course_test.o
 TEST_BIN  := $(BUILD)/test_runner
 
 .DEFAULT_GOAL := all
-.PHONY: all build test score clean config
+.PHONY: all build test score memcheck format clean config
 
 all build: $(TEST_BIN)
 
@@ -106,6 +108,12 @@ test: $(TEST_BIN)
 score:
 	@bash $(ROOT)/scripts/score.sh .
 
+memcheck:
+	@bash $(ROOT)/scripts/memcheck.sh .
+
+format:
+	@bash $(ROOT)/scripts/format-check.sh .
+
 clean:
 	rm -rf $(BUILD)
 
@@ -116,7 +124,7 @@ config:
 	@echo "STUDENT_FILES=$(STUDENT_FILES)"
 	@echo "FORBIDDEN=$(ALL_FORBIDDEN)"
 	@echo "CPPCHECK_COUNTS=$(CPPCHECK_COUNTS)"
-	@echo "STUDENT_CFLAGS=$(STUDENT_CFLAGS)"
+	@echo "STUDENT_CFLAGS=$(strip $(STUDENT_CFLAGS))"
 	@echo "INCLUDES=$(INCLUDES)"
 
 -include $(wildcard $(BUILD)/*/*.d)
