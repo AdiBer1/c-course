@@ -2,8 +2,6 @@
 
 int max3(int a, int b, int c)
 {
-    (void)a;  /* TODO: remove these lines and implement */
-    (void)b;
-    (void)c;
-    return 0;
+    /* first attempt: not finished yet */
+    return a;
 }
