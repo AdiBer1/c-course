@@ -56,7 +56,8 @@ else
     echo "Tasks touched:"
     printf '%s\n' "$tasks" | sed 's/^/  - tasks\//'
     echo "Make one branch per task (task-NN) and open a separate PR for each."
-    # shellcheck disable=SC2086
+    # Task folder names never contain spaces, so splitting them is intended.
+    # shellcheck disable=SC2046
     write_json multiple_tasks $(printf '%s\n' "$tasks" | sed 's#^#tasks/#')
 fi
 exit 1
