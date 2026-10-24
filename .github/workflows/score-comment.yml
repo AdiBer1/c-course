@@ -125,38 +125,65 @@ jobs:
               const s = score, t = s.tests, q = s.quality, d = q.deductions;
               const ok = s.total >= 60;
               passedNow = ok && protectedChanged.length === 0;
-              body += `## ${ok ? '✅' : '❌'} Score: ${s.total} / 100\n\n`;
-              body += `Task \`${s.task}\` · commit \`${short}\` · pass threshold 60\n\n`;
+              const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+              const minus = (v) => (v.points > 0 ? ` (−${v.points})` : '');
+
+              body += `## Automated grading — Task ${s.task.slice(0, 2)}\n\n`;
+              body += `\`${s.task}\` · stage ${s.stage} · commit \`${short}\`\n\n`;
+              body += `| Category | Score |\n|---|---|\n`;
+              body += `| Unit tests | ${t.points}/70 |\n`;
+              body += `| Code quality | ${q.points}/30 |\n`;
+              body += `| **Total** | **${s.total}/100** |\n\n`;
+              body += ok ? `**Status: PASSED ✅**\n\n` : `**Status: NEEDS FIX ❌** (below 60)\n\n`;
+
+              const fb = [];
               if (!s.compiled) {
-                body += `**The code does not compile, so the score is 0.** Run \`make\` in the task folder and fix the first error.\n\n`;
+                fb.push(`❌ **Does not compile**, so the score is 0. Run \`make\` in the task folder and fix the **first** error.`);
               } else {
-                body += `| Part | Points |\n|---|---|\n`;
-                body += `| Tests (${t.passed} of ${t.total} passed) | ${t.points} / 70 |\n`;
-                body += `| Code quality | ${q.points} / 30 |\n\n`;
-                const rows = [
-                  ['Compiler warnings', d.compiler_warnings],
-                  [d.cppcheck.active ? 'cppcheck findings' : 'cppcheck findings (notes only before stage 5)', d.cppcheck],
-                  ['Sanitizer reports', d.sanitizer_reports],
-                  ['Forbidden functions', d.forbidden_symbols],
-                  ['`ANSWERS.md` left empty', d.answers_empty],
-                ].filter(([, v]) => v.count > 0);
-                if (rows.length) {
-                  body += `| Deduction | Count | Points |\n|---|---|---|\n`;
-                  for (const [label, v] of rows) body += `| ${label} | ${v.count} | ${v.points > 0 ? '−' + v.points : '0'} |\n`;
-                  body += `\n`;
+                fb.push('✅ Compilation successful');
+
+                if (t.total > 0 && t.passed === t.total) fb.push(`✅ ${t.passed}/${t.total} tests passed`);
+                else fb.push(`${t.passed === 0 ? '❌' : '⚠️'} ${t.passed}/${t.total} tests passed (failing tests listed below)`);
+                if (t.timed_out) fb.push('⏱️ Some tests hit the 5-second limit: an infinite loop or very slow code');
+                if (t.crashed) fb.push('💥 Some tests crashed: run `make test` to see where');
+
+                const w = d.compiler_warnings;
+                fb.push(w.count === 0 ? '✅ No compiler warnings' : `⚠️ ${plural(w.count, 'compiler warning')}${minus(w)}: run \`make\` and read ${w.count === 1 ? 'it' : 'them'}`);
+
+                const san = d.sanitizer_reports;
+                fb.push(san.count === 0
+                  ? '✅ No memory errors, leaks or undefined behaviour (AddressSanitizer + UBSan)'
+                  : `❌ ${plural(san.count, 'sanitizer report')}: memory error, leak or undefined behaviour${minus(san)}. \`make test\` shows the line`);
+
+                const fs_ = d.forbidden_symbols;
+                fb.push(fs_.count === 0 ? '✅ No forbidden functions' : `❌ ${plural(fs_.count, 'forbidden function')} used${minus(fs_)}: see the task README`);
+
+                const c = d.cppcheck;
+                if (c.ran === true) {
+                  if (c.count === 0) fb.push('✅ No cppcheck findings');
+                  else if (c.active) fb.push(`⚠️ ${plural(c.count, 'cppcheck finding')}${minus(c)}`);
+                  else fb.push(`ℹ️ ${plural(c.count, 'cppcheck note')} (no points lost before stage 5, but worth fixing)`);
                 }
-                if (t.failed.length) {
-                  body += `<details><summary>Failing tests (${t.failed.length})</summary>\n\n`;
-                  for (const n of t.failed.slice(0, 40)) body += `- \`${n}\`\n`;
-                  body += `\n</details>\n\n`;
-                }
-                if (t.timed_out) body += `⏱️ Some tests hit the 5-second limit: infinite loop or too slow.\n\n`;
-                if (t.crashed) body += `💥 Some tests crashed. Run \`make test\` to see why.\n\n`;
+
+                const a = s.answers;
+                const answered = a && isInt(a.answered, 0, 100) && isInt(a.questions, 0, 100) ? ` (${a.answered}/${a.questions} answered)` : '';
+                fb.push(d.answers_empty.count === 0
+                  ? `✅ \`ANSWERS.md\` filled in${answered}`
+                  : `⚠️ \`ANSWERS.md\` is empty${minus(d.answers_empty)}`);
               }
+              body += `**Feedback:**\n\n${fb.map(x => `- ${x}`).join('\n')}\n\n`;
+
+              if (s.compiled && t.failed.length) {
+                body += `<details><summary>Failing tests (${t.failed.length})</summary>\n\n`;
+                for (const n of t.failed.slice(0, 40)) body += `- \`${n}\`\n`;
+                if (t.failed.length > 40) body += `- … and ${t.failed.length - 40} more\n`;
+                body += `\n</details>\n\n`;
+              }
+
               body += ok
-                ? `**Next step:** book your defense. Be ready to explain every line.\n`
-                : `**Next step:** keep working. Run \`make score\` locally, then push again; this comment updates.\n`;
-              body += `\nFull report (warnings, sanitizer locations, messages): ${runLink} → Summary.\n`;
+                ? `**Next step:** schedule your oral defense. Be ready to explain every line.\n`
+                : `**Next step:** keep working. Run \`make score\` locally, then push again; this comment updates itself.\n`;
+              body += `\nDetails (warning texts, sanitizer locations, test messages): ${runLink} → Summary.\n`;
             } else if (guard && typeof guard === 'object' && guard.ok === false) {
               const list = Array.isArray(guard.files) ? guard.files.slice(0, 30).map(safeName) : [];
               body += `## ❌ Not scored\n\n`;
