@@ -109,8 +109,14 @@ git push -u origin task-07
    click it. (Or: **Pull requests → New pull request**.)
 2. Check the direction: **base repository `adiber1/c-course`, base `main`**
    ← **head repository `<your-user>/c-course`, compare `task-07`**.
-3. Fill in the template (task name, checklist) and press **Create pull
-   request**.
+3. **Title:** exactly `[Task 07] - Full Name` (two-digit task number, then
+   your full name), e.g. `[Task 07] - Dana Cohen`. A check called `title`
+   turns red if the format is wrong; fix the title and it re-runs by itself.
+4. Fill in the template (name, task, checklist, the three reflection
+   questions) and press **Create pull request**.
+
+The repository is **public**: never write your student ID, phone number or
+other personal details in a PR.
 
 The first time, the teacher approves your PR's CI run once (a GitHub rule for
 new contributors). After that it runs by itself.
@@ -201,7 +207,7 @@ Good to know:
   may change (usually one `.c` file and `ANSWERS.md`). Changing anything else
   (tests, headers, Makefiles, CI, scripts, other tasks) fails the check. To
   undo such a change: `git checkout upstream/main -- <file>`, then commit.
-- **Branch name:** `task-NN` (e.g. `task-07`).
+- **Branch name:** `task-NN` (e.g. `task-07`). **PR title:** `[Task 07] - Full Name`.
 - **The tutor helps, it does not solve.** Using an assistant to write your
   code for you is pointless: you will not pass the defense.
 - **The defense is what counts.** You must be able to explain every line and

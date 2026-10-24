@@ -1,14 +1,30 @@
-## Task
+<!--
+PR TITLE must be:  [Task 07] - Full Name
+(two-digit task number, then your full name; a check makes sure)
 
-<!-- e.g. 07-command-parser. One PR = exactly one task. -->
-Task: 
+This repository is PUBLIC: everything written here can be read by anyone.
+Do not write your student ID, phone number or other personal details.
+-->
 
-## Checklist
+## Student information
 
-- [ ] My branch is called `task-NN` and this PR changes only this task's student files
-- [ ] `make score` gives **60 or more** on my machine
-- [ ] `ANSWERS.md` is filled in, in my own words
-- [ ] I can explain every line I changed, without notes
+Full name: 
+Task number: 
 
-## Anything you want the teacher to know (optional)
+## Submission checklist
+
+- [ ] My code compiles (`make`)
+- [ ] I ran `make test`
+- [ ] I ran `make score` and it is **60 or more**
+- [ ] My branch is `task-NN` and I changed only the files allowed for this task
+- [ ] I completed `ANSWERS.md` in my own words
+- [ ] I can explain every line of my implementation, without notes
+
+## Reflection
+
+1. What was the most challenging part?
+
+2. What did you learn?
+
+3. Did you use AI assistance? If so, how?
 

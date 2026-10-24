@@ -33,7 +33,7 @@ or click it together:
    - ☑ **Require a pull request before merging**: required approvals `0`
    - ☑ **Require status checks to pass**: **Add checks** → type `check` →
      select it (it appears after the first workflow run; you can also type it
-     before that).
+     before that). Optionally also add `title` (the PR title format check).
 6. **Create**.
 
 PRs are never merged, so the rules mainly protect `main` from accidents and
@@ -76,6 +76,8 @@ If the labels were never created, the score comment still works; the
    packages permissions*). Each workflow declares what it needs:
    - `check.yml`: `contents: read` only. It runs the student's code, so it
      never gets write access or secrets.
+   - `pr-title.yml`: no permissions at all. It only checks that the PR title
+     is `[Task NN] - Full Name`, and re-runs when the title is edited.
    - `score-comment.yml`: `pull-requests: write` and `actions: read`. It is
      started by `workflow_run`, runs the version from `main`, never checks out
      PR code, and only reads the score artifact.
@@ -97,15 +99,18 @@ unchanged.
 
 ## 5. Reviewing a PR and closing it after the defense
 
-1. Open the PR. The **score comment** shows the total, the parts, the
+1. Search by title, e.g. `is:pr "[Task 07]"`, or by label. The PR body has
+   the student's checklist and her three reflection answers (hardest part,
+   what she learned, how she used AI): read them before the defense.
+2. Open the PR. The **score comment** shows the total, the parts, the
    deductions and failing tests. **Checks → check → Summary** has the full
    report (warning texts, sanitizer locations).
-2. **Files changed**: only the task's student files may appear. If anything
+3. **Files changed**: only the task's student files may appear. If anything
    else appears, the score comment says the result is not valid.
-3. **Commits**: look at the history. Steady small commits are a good sign;
+4. **Commits**: look at the history. Steady small commits are a good sign;
    one giant commit is a reason to ask more questions in the defense.
-4. Hold the defense (see `defense-guide.md`).
-5. Add the label **`defended`**, write a short comment (date, outcome),
+5. Hold the defense (see `defense-guide.md`).
+6. Add the label **`defended`**, write a short comment (date, outcome),
    then **Close pull request**. Do **not** merge.
 
 ## 6. Updating a task later

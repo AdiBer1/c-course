@@ -5,7 +5,9 @@ About **5 minutes** per task, after the PR has reached 60+.
 ## Before (1 minute, alone)
 
 - Who is waiting: *Pull requests* → filter `is:open label:passed`.
-- Open the PR: score comment, *Files changed*, *Commits*.
+- Open the PR: score comment, *Files changed*, *Commits*, and her
+  **reflection** answers in the PR description (a good place to start
+  the conversation, especially "how did you use AI?").
 - Open the task's `TUTOR.md` → **Defense questions**, and the student's
   `ANSWERS.md` in the PR.
 - Note one line of her code you want explained (something non-trivial: a

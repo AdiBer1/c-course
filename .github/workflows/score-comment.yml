@@ -82,6 +82,8 @@ jobs:
             const protectedChanged = files
               .flatMap(f => [f.filename, f.previous_filename].filter(Boolean))
               .filter(n => !/^tasks\/[^\/]+\/(src\/[^\/]+|ANSWERS\.md)$/.test(n));
+            // Task numbers this PR really touches (from GitHub, not from the artifact).
+            const taskNums = [...new Set(files.map(f => (f.filename.match(/^tasks\/(\d{2})-[^\/]+\//) || [])[1]).filter(Boolean))];
 
             // ---------- validate the score
             function validScore(s) {
@@ -173,6 +175,15 @@ jobs:
               body += `## ⚠️ No score\n\nThe check finished (\`${run.conclusion}\`) without a readable result. See the ${runLink}.\n`;
             }
 
+            // ---------- PR title: "[Task 07] - Full Name"
+            const title = typeof pr.title === 'string' ? pr.title : '';
+            const tm = title.match(/^\[Task (\d{2})\] - (\S.*\S)$/u);
+            if (!tm || title.length > 100) {
+              body += `\n> ⚠️ **PR title:** please rename it to \`[Task NN] - Full Name\`, e.g. \`[Task 07] - Dana Cohen\`.\n`;
+            } else if (taskNums.length === 1 && tm[1] !== taskNums[0]) {
+              body += `\n> ⚠️ **PR title:** it says Task ${tm[1]}, but this PR changes task ${taskNums[0]}. Please fix the title.\n`;
+            }
+
             // ---------- one comment per PR: update it if it exists
             const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: prNumber, per_page: 100 });
             const mine = comments.find(c => c.user && c.user.login === 'github-actions[bot]' && typeof c.body === 'string' && c.body.startsWith(MARKER));
@@ -188,9 +199,8 @@ jobs:
             //   defended   set by the teacher by hand; never changed here
             try {
               const current = (pr.labels || []).map(l => l.name);
-              const nums = [...new Set(files.map(f => (f.filename.match(/^tasks\/(\d{2})-[^\/]+\//) || [])[1]).filter(Boolean))];
               const want = new Set();
-              if (nums.length === 1) want.add(`task-${nums[0]}`);
+              if (taskNums.length === 1) want.add(`task-${taskNums[0]}`);
               if (current.includes('defended')) {
                 want.add('defended');
               } else {

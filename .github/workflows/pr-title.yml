@@ -1,0 +1,39 @@
+# Checks that the PR title has the form:  [Task 07] - Full Name
+#
+# Runs on every title edit too, so fixing the title turns it green without a
+# new push. It never checks out or runs PR code and needs no permissions; the
+# title is passed through an environment variable, never pasted into the script.
+# It does not affect the score or the `check` job.
+name: PR title
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, edited, reopened, synchronize]
+
+permissions: {}
+
+jobs:
+  title:
+    name: title
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Title must be "[Task NN] - Full Name"
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          re='^\[Task ([0-9]{2})\] - ([^ ].*[^ ])$'
+          if [[ ${#TITLE} -le 100 && $TITLE =~ $re ]]; then
+            echo "OK: task ${BASH_REMATCH[1]}"
+            exit 0
+          fi
+          {
+            echo "### ❌ PR title has the wrong format"
+            echo
+            echo 'Use exactly: `[Task 07] - Full Name` (two-digit task number, space, dash, space, your full name).'
+            echo
+            echo "Edit the title at the top of the PR page; this check runs again by itself."
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "::error::PR title must look like: [Task 07] - Full Name"
+          exit 1
