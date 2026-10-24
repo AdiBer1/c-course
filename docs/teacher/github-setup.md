@@ -31,13 +31,36 @@ or click it together:
    - ☑ **Restrict deletions**
    - ☑ **Block force pushes**
    - ☑ **Require a pull request before merging**: required approvals `0`
-   - ☑ **Require status checks to pass**: **Add checks** → type `check` →
-     select it (it appears after the first workflow run; you can also type it
-     before that). Optionally also add `title` (the PR title format check).
+   - ☑ **Require status checks to pass**: **Add checks** → add
+     `PR Validation / Validate Submission` and `Grading / Automated Score`
+     (they appear after the first workflow run; you can also type them).
+     Optionally also `PR Validation / Title Format`. The other checks are
+     feedback for the student and should not be required.
 6. **Create**.
 
 PRs are never merged, so the rules mainly protect `main` from accidents and
-make the `check` result visible on every PR.
+make the validation and grading results visible on every PR.
+
+## 2b. The checks on every PR
+
+| Check (workflow `CI`) | What it does | Affects the score |
+|---|---|---|
+| PR Validation / Validate Submission | one task, allowed files only; notes on branch name and title | no (if it fails, nothing is scored) |
+| Build / Compile | compiles with the course flags, lists warnings and forbidden functions | compile error = 0; warnings −5; forbidden −15 |
+| Tests / Unit Tests | runs the tests once (with ASan + UBSan, 5 s limit) | 70 points |
+| Security / AddressSanitizer | explains memory errors from that test run | −10 per code location |
+| Security / UndefinedBehaviorSanitizer | explains undefined behaviour from that test run | −10 per code location (a line both report counts once) |
+| Quality / Static Analysis | cppcheck | −3 each from stage 5, notes before |
+| Quality / Formatting | clang-format on the changed student C files | never (informational) |
+| Quality / Memory Analysis | Valgrind, from stage 2 (finds uninitialised reads) | never (informational) |
+| Grading / Automated Score | `score.sh` report phase: the final 0–100, red below 60 | this **is** the score |
+
+Plus `PR / PR Validation / Title Format` (workflow `pr-title.yml`).
+
+The score is computed **once**, by `scripts/score.sh`, exactly like
+`make score`: each job runs one of its phases and passes its logs on as an
+artifact. The Security and Quality checks only explain results; they never
+add or remove points themselves.
 
 ## 3. Labels
 
@@ -74,8 +97,8 @@ If the labels were never created, the score comment still works; the
    workflows**. You do this once per student.
 3. **Workflow permissions:** leave the default (*Read repository contents and
    packages permissions*). Each workflow declares what it needs:
-   - `check.yml`: `contents: read` only. It runs the student's code, so it
-     never gets write access or secrets.
+   - `check.yml` (workflow **CI**, all checks above): `contents: read` only.
+     It runs the student's code, so it never gets write access or secrets.
    - `pr-title.yml`: no permissions at all. It only checks that the PR title
      is `[Task NN] - Full Name`, and re-runs when the title is edited.
    - `score-comment.yml`: `pull-requests: write` and `actions: read`. It is
@@ -87,7 +110,7 @@ If the labels were never created, the score comment still works; the
 After the first student PR (or your own test PR from a second account or a
 fork):
 
-1. **Actions** tab → *Check* run for the PR → green or red, with a summary.
+1. **Actions** tab → *CI* run for the PR → one job per check, each with a summary.
 2. **Actions** tab → *Score comment* run, started right after it.
 3. The PR shows **one** comment starting with "Score: NN / 100". Push again:
    the same comment is updated, no second comment appears.
@@ -103,8 +126,9 @@ unchanged.
    the student's checklist and her three reflection answers (hardest part,
    what she learned, how she used AI): read them before the defense.
 2. Open the PR. The **score comment** shows the total, the parts, the
-   deductions and failing tests. **Checks → check → Summary** has the full
-   report (warning texts, sanitizer locations).
+   deductions and failing tests. The **CI** run's **Summary** page has one
+   report per check (warning texts, failing tests, sanitizer locations,
+   Valgrind and formatting notes).
 3. **Files changed**: only the task's student files may appear. If anything
    else appears, the score comment says the result is not valid.
 4. **Commits**: look at the history. Steady small commits are a good sign;
@@ -143,8 +167,9 @@ Students with an open PR on a changed task may need to run
 
 - A PR can change any file, including the workflow and the scripts. Two
   measures handle that:
-  1. `check.yml` builds and scores inside a **trusted copy of `main`** and
-     copies in only the task's `STUDENT_FILES` from the PR, so changed
+  1. `check.yml` first builds a **trusted copy of `main`** and copies in
+     only the task's `STUDENT_FILES` from the PR (job *Validate Submission*).
+     Every other job works on that copy (artifact `submission`), so changed
      tests, Makefiles or scripts in the PR are never used for scoring.
   2. `score-comment.yml` always runs from `main` and independently lists the
      PR's files through the API. If anything outside `tasks/*/src/` and
@@ -153,4 +178,4 @@ Students with an open PR on a changed task may need to run
 - The comment workflow treats the uploaded artifact as untrusted: size limits,
   strict validation of every number and name, and the PR number must belong
   to the PR whose head commit was checked.
-- `check` runs student code with a read-only token and no secrets.
+- The CI jobs run student code with a read-only token and no secrets.

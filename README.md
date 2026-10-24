@@ -38,6 +38,7 @@ In the Ubuntu terminal:
 ```bash
 sudo apt update
 sudo apt install -y build-essential cppcheck git
+sudo apt install -y clang-format valgrind     # optional: make format / make memcheck
 gcc --version && make --version && cppcheck --version
 git config --global user.name  "Your Name"
 git config --global user.email "you@example.com"
@@ -133,6 +134,25 @@ git push
 
 CI runs again and the **same** score comment is updated. Do not open a new PR.
 
+On the PR's **Checks** tab you see one check per topic. Click a check, then
+**Summary**, for an explanation: what failed, where, how to reproduce it
+locally, and whether it costs points.
+
+| Check | Question it answers | Costs points? |
+|---|---|---|
+| PR Validation / Validate Submission | one task, only allowed files? | if it fails, nothing is scored |
+| Build / Compile | does it compile? warnings? forbidden functions? | yes |
+| Tests / Unit Tests | do the tests pass? | yes (70 points) |
+| Security / AddressSanitizer | memory errors (out of bounds, use after free, ...)? | yes |
+| Security / UndefinedBehaviorSanitizer | undefined behaviour (overflow, bad shifts, ...)? | yes |
+| Quality / Static Analysis | what does cppcheck find? | from stage 5 |
+| Quality / Formatting | does the code follow the course style? | **no**, information only |
+| Quality / Memory Analysis | does Valgrind find uninitialised memory? (from stage 2) | **no**, information only |
+| Grading / Automated Score | the final score, the same as `make score` | this **is** the score |
+
+The two **Security** checks explain the same test run as *Unit Tests*; a
+problem they both report on the same line costs points only once.
+
 CI also labels your PR: `task-NN`, and `passed` (60+) or `needs-fix`. After
 the defense the teacher adds `defended`.
 
@@ -191,6 +211,10 @@ Good to know:
 - The tests run with **AddressSanitizer** and **UBSan**, which find memory
   errors and undefined behaviour at the exact line. `make test` shows the full
   reports. Each **distinct** problem counts once, however often it happens.
+- Optional extra feedback, never part of the score: `make format` shows how
+  the course style (`.clang-format`) would format your files (it changes
+  nothing; `clang-format -i src/file.c` applies it), and `make memcheck` runs
+  the tests under Valgrind, which also finds reads of uninitialised memory.
 - Every test program is stopped after **5 seconds**. A test that never
   finishes counts as failed ("infinite loop or too slow").
 - A test that crashes counts as failed; the other tests still run.

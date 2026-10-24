@@ -4,7 +4,7 @@
 # new push. It never checks out or runs PR code and needs no permissions; the
 # title is passed through an environment variable, never pasted into the script.
 # It does not affect the score or the `check` job.
-name: PR title
+name: PR
 
 on:
   pull_request:
@@ -15,7 +15,7 @@ permissions: {}
 
 jobs:
   title:
-    name: title
+    name: PR Validation / Title Format
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:

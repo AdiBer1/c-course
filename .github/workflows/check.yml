@@ -1,11 +1,30 @@
-# Builds, tests and scores a student's pull request.
+# CI for a student's pull request: one GitHub check per job.
 #
-# Security model:
-#   - read-only token, no secrets, plain `pull_request` (never pull_request_target)
-#   - the scripts, tests and Makefiles that do the scoring come from `main`
-#     (the "trusted" copy); only the task's STUDENT_FILES are taken from the PR
-#   - the score comment is posted by score-comment.yml, which never runs PR code
-name: Check
+#   PR Validation / Validate Submission  ─┬─ Build / Compile ── Tests / Unit Tests ─┬─ Security / AddressSanitizer
+#                                         │                                        └─ Security / UndefinedBehaviorSanitizer
+#                                         ├─ Quality / Static Analysis
+#                                         ├─ Quality / Formatting        (informational)
+#                                         ├─ Quality / Memory Analysis   (informational)
+#                                         └─ Grading / Automated Score   (needs Build, Tests, Static Analysis)
+#
+# How the score stays honest and identical to `make score`:
+#   - scripts/score.sh is the ONLY scoring code. Each job runs one of its
+#     phases (build / test / analyze / report) and passes build/score-logs/
+#     on as an artifact; Grading runs the report phase on all of them.
+#   - The tests run ONCE (with AddressSanitizer + UBSan). The two Security
+#     checks explain those same logs; they do not re-run or re-score anything.
+#   - Formatting and Memory Analysis never change the score.
+#
+# Security model (unchanged):
+#   - plain `pull_request` (never pull_request_target), read-only token, no secrets
+#   - "Validate Submission" builds a trusted copy of `main` and copies in ONLY
+#     the task's STUDENT_FILES from the PR; every later job works on that copy
+#     (artifact "submission") and never on the PR's own scripts or tests
+#   - PR metadata (titles, branch names, file names) reaches shell code only
+#     through environment variables, never through ${{ }} inside a script
+#   - the score comment is posted by score-comment.yml, which runs from main
+#     and never runs PR code
+name: CI
 
 on:
   pull_request:
@@ -15,14 +34,19 @@ permissions:
   contents: read
 
 concurrency:
-  group: check-${{ github.event.pull_request.number }}
+  group: ci-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
-  check:
-    name: check
+  # ------------------------------------------------------------------ validation
+  validate:
+    name: PR Validation / Validate Submission
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
+    outputs:
+      task: ${{ steps.task.outputs.task }}
+      stage: ${{ steps.prepare.outputs.stage }}
+      changed: ${{ steps.prepare.outputs.changed }}
     steps:
       - name: Check out the pull request merged into main
         uses: actions/checkout@v4
@@ -35,82 +59,112 @@ jobs:
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          # runner.temp is not available at job level, so OUT is set here for all later steps
           OUT="$RUNNER_TEMP/out"
           echo "OUT=$OUT" >> "$GITHUB_ENV"
           mkdir -p "$OUT"
           echo "$PR_NUMBER" > "$OUT/pr-number.txt"
           cd pr
           echo "BASE_SHA=$(git rev-parse HEAD^1)" >> "$GITHUB_ENV"
-          echo "MERGE_SHA=$(git rev-parse HEAD)"  >> "$GITHUB_ENV"
+          echo "MERGE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
           git worktree add --detach ../trusted HEAD^1
 
-      - name: Which task does this PR touch?
+      - name: Exactly one task
         id: task
         working-directory: trusted
         run: |
-          set -o pipefail
           if GUARD_JSON="$OUT/guard.json" bash scripts/detect-task.sh "$BASE_SHA" "$MERGE_SHA" > "$RUNNER_TEMP/task.txt"; then
             task=$(cat "$RUNNER_TEMP/task.txt")
+            # Only a real task folder name may travel on as a job output.
+            if [[ ! $task =~ ^tasks/[0-9]{2}-[a-z0-9-]+$ ]] || [ ! -f "$task/task.mk" ]; then
+              echo "::error::Unexpected task folder"; exit 1
+            fi
             echo "task=$task" >> "$GITHUB_OUTPUT"
             echo "Task: $task"
           else
-            cat "$RUNNER_TEMP/task.txt" | tee -a "$GITHUB_STEP_SUMMARY"
+            { echo "### ❌ PR Validation: FAILED"; echo; sed 's/^/    /' "$RUNNER_TEMP/task.txt"; } >> "$GITHUB_STEP_SUMMARY"
+            cat "$RUNNER_TEMP/task.txt"
+            echo "::error title=One PR = exactly one task::$(head -n1 "$RUNNER_TEMP/task.txt")"
             exit 1
           fi
 
-      - name: Only allowed files changed?
+      - name: Only allowed files changed
         working-directory: trusted
         env:
           TASK: ${{ steps.task.outputs.task }}
         run: |
-          set -o pipefail
-          GUARD_JSON="$OUT/guard.json" bash scripts/check-allowed-files.sh "$TASK" "$BASE_SHA" "$MERGE_SHA" \
-            | tee "$RUNNER_TEMP/allowed.txt" || { cat "$RUNNER_TEMP/allowed.txt" >> "$GITHUB_STEP_SUMMARY"; exit 1; }
+          if ! GUARD_JSON="$OUT/guard.json" bash scripts/check-allowed-files.sh "$TASK" "$BASE_SHA" "$MERGE_SHA" > "$RUNNER_TEMP/allowed.txt"; then
+            { echo "### ❌ PR Validation: FAILED"; echo; sed 's/^/    /' "$RUNNER_TEMP/allowed.txt"; } >> "$GITHUB_STEP_SUMMARY"
+            cat "$RUNNER_TEMP/allowed.txt"
+            echo "::error title=Files you may not change::See the job summary for the list and how to undo the changes."
+            exit 1
+          fi
+          cat "$RUNNER_TEMP/allowed.txt"
 
-      - name: Branch name note
+      - name: Copy the student's files into the trusted copy
+        id: prepare
+        working-directory: trusted
         env:
           TASK: ${{ steps.task.outputs.task }}
           HEAD_REF: ${{ github.head_ref }}
-        run: |
-          num=$(basename "$TASK" | cut -c1-2)
-          if [ "$HEAD_REF" != "task-$num" ]; then
-            echo "Note: branch is '$HEAD_REF'; the convention is 'task-$num'." | tee -a "$GITHUB_STEP_SUMMARY"
-          fi
-
-      - name: Copy the student's files into the trusted copy
-        working-directory: trusted
-        env:
-          TASK: ${{ steps.task.outputs.task }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
           files=$(make -s --no-print-directory -C "$TASK" config | sed -n 's/^STUDENT_FILES=//p')
+          stage=$(make -s --no-print-directory -C "$TASK" config | sed -n 's/^TASK_STAGE=//p')
+          changed=""; missing=""
           for f in $files; do
             if git cat-file -e "$MERGE_SHA:$TASK/$f" 2>/dev/null; then
               git show "$MERGE_SHA:$TASK/$f" > "$TASK/$f"
             else
-              rm -f "$TASK/$f"
+              rm -f "$TASK/$f"; missing="$missing $f"
             fi
+            git diff --quiet "$BASE_SHA" "$MERGE_SHA" -- "$TASK/$f" || changed="$changed $f"
           done
+          echo "stage=$stage" >> "$GITHUB_OUTPUT"
+          changed=${changed# }
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
 
-      - name: Install cppcheck
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq --no-install-recommends cppcheck > /dev/null
-          cppcheck --version
-          # AddressSanitizer in older gcc breaks with the high ASLR entropy of newer kernels.
-          sudo sysctl -w vm.mmap_rnd_bits=28
+          # Consistency notes: they never fail the check (and never cost points).
+          num=$(basename "$TASK" | cut -c1-2)
+          notes=()
+          [ "$HEAD_REF" = "task-$num" ] || notes+=("Branch is \`$(printf '%s' "$HEAD_REF" | tr -d '`|' | cut -c1-60)\`; the convention is \`task-$num\`.")
+          if [[ $PR_TITLE =~ ^\[Task\ ([0-9]{2})\]\ -\  ]] && [ "${BASH_REMATCH[1]}" != "$num" ]; then
+            notes+=("The PR title says Task ${BASH_REMATCH[1]}, but this PR changes task $num.")
+          fi
+          [ -z "$missing" ] || notes+=("These student files were deleted:$missing. Restore them with \`git checkout upstream/main -- <file>\`.")
+          for n in "${notes[@]}"; do echo "::warning title=Submission note::${n//%/%25}"; done
 
-      - name: Build, test and score
-        working-directory: trusted
-        env:
-          TASK: ${{ steps.task.outputs.task }}
-        run: |
-          bash scripts/score.sh "$TASK"
-          cp "$TASK/build/score.json" "$TASK/build/score.md" "$OUT/"
-          cat "$TASK/build/score.md" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "### ✅ PR Validation: PASSED"
+            echo
+            echo "| Check | Result |"
+            echo "|---|---|"
+            echo "| Exactly one task folder changed | ✅ \`$TASK\` (stage $stage) |"
+            echo "| Only allowed files changed | ✅ ${changed:- (no student file changed)} |"
+            echo "| Branch name \`task-$num\` | $([ "$HEAD_REF" = "task-$num" ] && echo ✅ || echo "⚠️ note") |"
+            echo
+            if [ ${#notes[@]} -gt 0 ]; then
+              echo "**Notes** (they do not fail the check and cost no points):"
+              echo
+              for n in "${notes[@]}"; do echo "- $n"; done
+              echo
+            fi
+            echo "The PR title format is checked separately by **PR / PR Validation / Title Format**."
+          } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload the result for the comment workflow
-        if: always()
+      - name: Share the trusted submission with the other jobs
+        uses: actions/upload-artifact@v4
+        with:
+          name: submission
+          path: |
+            trusted/
+            !trusted/.git
+          include-hidden-files: true
+          retention-days: 3
+
+      # Only when validation fails: Grading will not run, so this job hands the
+      # comment workflow the reason instead.
+      - name: Upload the validation result for the comment workflow
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: score
@@ -118,11 +172,257 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
-      - name: Pass threshold (60)
+  # ------------------------------------------------------------------ build
+  build:
+    name: Build / Compile
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      TASK: ${{ needs.validate.outputs.task }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: submission
+      - name: Compile with the course flags
+        run: bash scripts/score.sh --phase build "$TASK"
+      - name: Report
+        run: bash scripts/ci-report.sh build "$TASK"
+      - name: Share the build with the test job
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: ${{ needs.validate.outputs.task }}/build/
+          retention-days: 3
+          if-no-files-found: error
+
+  # ------------------------------------------------------------------ tests (run once)
+  tests:
+    name: Tests / Unit Tests
+    needs: [validate, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      TASK: ${{ needs.validate.outputs.task }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: submission
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: ${{ needs.validate.outputs.task }}/build
+      - name: Run the tests (with AddressSanitizer and UBSan, 5 s limit)
         run: |
-          total=$(jq -r '.total' "$OUT/score.json")
-          echo "Score: $total / 100"
-          if [ "$total" -lt 60 ]; then
-            echo "::error::Score $total is below 60. Keep working, run 'make score' locally and push again."
+          # AddressSanitizer in older gcc breaks with the high ASLR entropy of newer kernels.
+          sudo sysctl -w vm.mmap_rnd_bits=28 > /dev/null
+          bash scripts/score.sh --phase test "$TASK"
+      - name: Report
+        run: bash scripts/ci-report.sh tests "$TASK"
+      - name: Share the test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs
+          path: ${{ needs.validate.outputs.task }}/build/score-logs/
+          retention-days: 3
+          if-no-files-found: error
+
+  asan:
+    name: Security / AddressSanitizer
+    needs: [validate, tests]
+    # Also explain sanitizer findings when some tests failed.
+    if: ${{ !cancelled() && (needs.tests.result == 'success' || needs.tests.result == 'failure') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      TASK: ${{ needs.validate.outputs.task }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: submission
+      - uses: actions/download-artifact@v4
+        with:
+          name: test-logs
+          path: ${{ needs.validate.outputs.task }}/build/score-logs
+      - name: Memory errors found while the tests ran
+        run: bash scripts/ci-report.sh asan "$TASK"
+
+  ubsan:
+    name: Security / UndefinedBehaviorSanitizer
+    needs: [validate, tests]
+    if: ${{ !cancelled() && (needs.tests.result == 'success' || needs.tests.result == 'failure') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      TASK: ${{ needs.validate.outputs.task }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: submission
+      - uses: actions/download-artifact@v4
+        with:
+          name: test-logs
+          path: ${{ needs.validate.outputs.task }}/build/score-logs
+      - name: Undefined behaviour found while the tests ran
+        run: bash scripts/ci-report.sh ubsan "$TASK"
+
+  # ------------------------------------------------------------------ quality
+  static-analysis:
+    name: Quality / Static Analysis
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      TASK: ${{ needs.validate.outputs.task }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: submission
+      - name: Install cppcheck
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends cppcheck > /dev/null
+      - name: Run cppcheck
+        run: bash scripts/score.sh --phase analyze "$TASK"
+      - name: Report
+        run: bash scripts/ci-report.sh static "$TASK"
+      - name: Share the findings with Grading
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-logs
+          path: |
+            ${{ needs.validate.outputs.task }}/build/score-logs/cppcheck.txt
+            ${{ needs.validate.outputs.task }}/build/score-logs/cppcheck-ran
+          retention-days: 3
+          if-no-files-found: error
+
+  formatting:
+    name: Quality / Formatting
+    needs: validate
+    # Informational, and only meaningful when the PR changes C files of the student.
+    if: ${{ contains(needs.validate.outputs.changed, '.c') || contains(needs.validate.outputs.changed, '.h') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      TASK: ${{ needs.validate.outputs.task }}
+      CHANGED: ${{ needs.validate.outputs.changed }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: submission
+      - name: Install clang-format
+        run: |
+          command -v clang-format > /dev/null || {
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq --no-install-recommends clang-format > /dev/null
+          }
+      - name: Check the changed files (nothing is modified; does not affect the score)
+        # CHANGED holds file names validated against STUDENT_FILES; word splitting is intended.
+        run: |
+          # shellcheck disable=SC2086
+          bash scripts/format-check.sh "$TASK" $CHANGED
+
+  memory-analysis:
+    name: Quality / Memory Analysis
+    needs: validate
+    # Informational. From stage 2 (pointers) on, where uninitialised memory becomes likely.
+    if: ${{ needs.validate.outputs.stage >= 2 }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      TASK: ${{ needs.validate.outputs.task }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: submission
+      - name: Install Valgrind
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends valgrind > /dev/null
+      - name: Run the tests under Valgrind (does not affect the score)
+        run: bash scripts/memcheck.sh "$TASK"
+
+  # ------------------------------------------------------------------ grading
+  grading:
+    name: Grading / Automated Score
+    needs: [validate, build, tests, static-analysis]
+    # Runs whenever validation passed, also when the build or tests failed
+    # (a failed build is a valid result: score 0).
+    if: ${{ !cancelled() && needs.validate.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      TASK: ${{ needs.validate.outputs.task }}
+      BUILD_RESULT: ${{ needs.build.result }}
+      TESTS_RESULT: ${{ needs.tests.result }}
+      STATIC_RESULT: ${{ needs.static-analysis.result }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: submission
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: build-output
+          path: ${{ needs.validate.outputs.task }}/build
+      # Student code runs in the Tests job and could write files there, so only
+      # the test-phase results are taken from it; build results come from the
+      # Build job (where no student code runs) and cppcheck from Static Analysis.
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: test-logs
+          path: ${{ runner.temp }}/test-logs
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: static-logs
+          path: ${{ runner.temp }}/static-logs
+      - name: Collect the results of each job
+        run: |
+          logs="$TASK/build/score-logs"
+          mkdir -p "$logs"
+          for f in test-list.txt results.txt sanitizers.txt sanitizers-raw.txt timed_out crashed tests-ran \
+                   san-all.log san-one.log run-all.out run-one.out; do
+            [ -f "$RUNNER_TEMP/test-logs/$f" ] && cp "$RUNNER_TEMP/test-logs/$f" "$logs/"
+          done
+          for f in cppcheck.txt cppcheck-ran; do
+            [ -f "$RUNNER_TEMP/static-logs/$f" ] && cp "$RUNNER_TEMP/static-logs/$f" "$logs/"
+          done
+          true
+
+      - name: Make sure every part produced a result
+        run: |
+          logs="$TASK/build/score-logs"
+          problem=""
+          [ -f "$logs/compiled" ] || problem="the Build job left no result ($BUILD_RESULT)"
+          if [ -z "$problem" ] && [ "$(cat "$logs/compiled")" = true ] && [ ! -f "$logs/tests-ran" ]; then
+            problem="the Unit Tests job left no result ($TESTS_RESULT)"
+          fi
+          [ -n "$problem" ] || [ -f "$logs/cppcheck-ran" ] || problem="the Static Analysis job left no result ($STATIC_RESULT)"
+          if [ -n "$problem" ]; then
+            echo "::error title=No score::$problem. This is a CI problem, not your code: re-run the workflow."
+            { echo "### ⚠️ Automated score: NOT COMPUTED"; echo; echo "$problem. This is a CI problem, not your code: re-run the workflow."; } >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
+
+      - name: Compute the score (same code as `make score`)
+        run: |
+          bash scripts/score.sh --phase report "$TASK" > /dev/null
+          mkdir -p "$RUNNER_TEMP/out"
+          echo "$PR_NUMBER" > "$RUNNER_TEMP/out/pr-number.txt"
+          cp "$TASK/build/score.json" "$TASK/build/score.md" "$RUNNER_TEMP/out/"
+
+      - name: Upload the result for the comment workflow
+        uses: actions/upload-artifact@v4
+        with:
+          name: score
+          path: ${{ runner.temp }}/out/
+          retention-days: 7
+
+      - name: Pass threshold (60)
+        run: bash scripts/ci-report.sh grading "$TASK"

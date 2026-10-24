@@ -14,7 +14,7 @@ name: Score comment
 
 on:
   workflow_run:
-    workflows: [Check]
+    workflows: [CI]
     types: [completed]
 
 permissions:

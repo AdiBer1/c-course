@@ -7,7 +7,8 @@
 # Needs the GitHub CLI, logged in as the repo owner: gh auth login
 # Creates (or updates) a ruleset "protect-main" on the default branch:
 #   - changes only through a pull request
-#   - the "check" status check must pass
+#   - the checks "PR Validation / Validate Submission" and
+#     "Grading / Automated Score" must pass (the other checks are feedback)
 #   - no force pushes, no deletion
 #   - repository admins (you) may bypass, so you can push task updates directly
 #
@@ -48,7 +49,10 @@ BODY=$(cat <<JSON
       "type": "required_status_checks",
       "parameters": {
         "strict_required_status_checks_policy": false,
-        "required_status_checks": [ { "context": "check" } ]
+        "required_status_checks": [
+          { "context": "PR Validation / Validate Submission" },
+          { "context": "Grading / Automated Score" }
+        ]
       }
     }
   ]
