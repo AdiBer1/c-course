@@ -139,7 +139,8 @@ static void test_strcmp_agrees_with_library(void)
     const size_t n = sizeof words / sizeof words[0];
     for (size_t i = 0; i < n; i++) {
         for (size_t j = 0; j < n; j++) {
-            TEST_ASSERT_EQUAL_INT(sign(strcmp(words[i], words[j])), sign(my_strcmp(words[i], words[j])));
+            TEST_ASSERT_EQUAL_INT(sign(strcmp(words[i], words[j])),
+                                  sign(my_strcmp(words[i], words[j])));
         }
     }
 }

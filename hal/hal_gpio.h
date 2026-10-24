@@ -16,10 +16,7 @@
 
 #include <stdint.h>
 
-typedef enum {
-    GPIO_LOW = 0,
-    GPIO_HIGH = 1
-} gpio_level_t;
+typedef enum { GPIO_LOW = 0, GPIO_HIGH = 1 } gpio_level_t;
 
 typedef struct hal_gpio {
     /* Drive output pin `pin` to `level`. */

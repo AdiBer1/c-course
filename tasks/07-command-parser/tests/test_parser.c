@@ -23,7 +23,8 @@ static void assert_unchanged(const command_t *c)
 static void assert_error(parse_status_t expected, const char *line)
 {
     command_t out = untouched();
-    TEST_ASSERT_EQUAL_STRING_MESSAGE(parse_status_str(expected), parse_status_str(parse_command(line, &out)), line);
+    TEST_ASSERT_EQUAL_STRING_MESSAGE(parse_status_str(expected),
+                                     parse_status_str(parse_command(line, &out)), line);
     TEST_ASSERT_EQUAL_INT_MESSAGE(expected, parse_command(line, &out), line);
     assert_unchanged(&out);
 }

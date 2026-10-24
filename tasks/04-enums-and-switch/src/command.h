@@ -21,10 +21,7 @@ typedef enum {
     CMD_COUNT       /* number of commands; not a real command               */
 } command_t;
 
-typedef enum {
-    LED_OFF = 0,
-    LED_ON
-} led_state_t;
+typedef enum { LED_OFF = 0, LED_ON } led_state_t;
 
 /* Classify one received character. */
 command_t command_classify(char c);

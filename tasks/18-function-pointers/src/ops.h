@@ -46,7 +46,7 @@ void map_i32(int32_t *values, size_t len, int32_t (*fn)(int32_t));
 /* ---------------------------------------------------------------- part 2 */
 
 typedef struct {
-    char symbol;     /* '+', '-', '*', 'M' (max) */
+    char symbol; /* '+', '-', '*', 'M' (max) */
     binary_op_t fn;
 } op_entry_t;
 

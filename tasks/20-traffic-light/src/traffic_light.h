@@ -35,31 +35,26 @@
 #include "hal_gpio.h"
 
 /* Pins (all active high: GPIO_HIGH = lamp on / button pressed). */
-#define TL_PIN_RED     0u
-#define TL_PIN_YELLOW  1u
-#define TL_PIN_GREEN   2u
-#define TL_PIN_BUTTON  3u
+#define TL_PIN_RED    0u
+#define TL_PIN_YELLOW 1u
+#define TL_PIN_GREEN  2u
+#define TL_PIN_BUTTON 3u
 
 /* Phase durations in milliseconds. */
-#define TL_RED_MS         5000u
-#define TL_RED_YELLOW_MS  1000u
-#define TL_GREEN_MS       4000u
-#define TL_GREEN_MIN_MS   1000u
-#define TL_YELLOW_MS      2000u
+#define TL_RED_MS        5000u
+#define TL_RED_YELLOW_MS 1000u
+#define TL_GREEN_MS      4000u
+#define TL_GREEN_MIN_MS  1000u
+#define TL_YELLOW_MS     2000u
 
-typedef enum {
-    TL_RED = 0,
-    TL_RED_YELLOW,
-    TL_GREEN,
-    TL_YELLOW
-} tl_phase_t;
+typedef enum { TL_RED = 0, TL_RED_YELLOW, TL_GREEN, TL_YELLOW } tl_phase_t;
 
 typedef struct {
     const hal_gpio_t *gpio;
     const hal_clock_t *clock;
     tl_phase_t phase;
-    uint32_t phase_start_ms;  /* clock value when the current phase began */
-    bool ped_request;         /* button seen pressed, not served yet */
+    uint32_t phase_start_ms; /* clock value when the current phase began */
+    bool ped_request;        /* button seen pressed, not served yet */
 } traffic_light_t;
 
 /*

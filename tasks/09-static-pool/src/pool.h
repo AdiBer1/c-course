@@ -19,8 +19,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#define POOL_BLOCK_SIZE  32u  /* bytes per block */
-#define POOL_BLOCK_COUNT 8u   /* number of blocks */
+#define POOL_BLOCK_SIZE  32u /* bytes per block */
+#define POOL_BLOCK_COUNT 8u  /* number of blocks */
 
 /* Mark every block free. Must be called before first use; may be called again to reset. */
 void pool_init(void);

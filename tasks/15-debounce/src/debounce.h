@@ -27,22 +27,15 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef enum {
-    BTN_RELEASED = 0,
-    BTN_PRESSED
-} btn_state_t;
+typedef enum { BTN_RELEASED = 0, BTN_PRESSED } btn_state_t;
 
-typedef enum {
-    BTN_EVENT_NONE = 0,
-    BTN_EVENT_PRESS,
-    BTN_EVENT_RELEASE
-} btn_event_t;
+typedef enum { BTN_EVENT_NONE = 0, BTN_EVENT_PRESS, BTN_EVENT_RELEASE } btn_event_t;
 
 typedef struct {
-    btn_state_t stable;  /* debounced state */
-    uint8_t counter;     /* consecutive ticks the raw input disagreed */
-    uint8_t threshold;   /* ticks needed to accept a change (>= 1) */
-    uint32_t presses;    /* number of PRESS events so far */
+    btn_state_t stable; /* debounced state */
+    uint8_t counter;    /* consecutive ticks the raw input disagreed */
+    uint8_t threshold;  /* ticks needed to accept a change (>= 1) */
+    uint32_t presses;   /* number of PRESS events so far */
 } debounce_t;
 
 /*

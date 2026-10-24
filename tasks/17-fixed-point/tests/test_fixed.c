@@ -6,9 +6,9 @@
 void setUp(void) {}
 void tearDown(void) {}
 
-#define Q(int_part) ((q16_t)((int_part) * 65536))
+#define Q(int_part)  ((q16_t)((int_part) * 65536))
 #define ONE_AND_HALF ((q16_t)0x00018000)
-#define HALF ((q16_t)0x00008000)
+#define HALF         ((q16_t)0x00008000)
 
 /* ---------------------------------------------------------------- conversions */
 
@@ -49,7 +49,7 @@ static void test_from_milli(void)
 {
     TEST_ASSERT_EQUAL_INT32(98304, q16_from_milli(1500));
     TEST_ASSERT_EQUAL_INT32(-16384, q16_from_milli(-250));
-    TEST_ASSERT_EQUAL_INT32(66, q16_from_milli(1));   /* 65.536 -> 66 */
+    TEST_ASSERT_EQUAL_INT32(66, q16_from_milli(1)); /* 65.536 -> 66 */
     TEST_ASSERT_EQUAL_INT32(-66, q16_from_milli(-1));
     TEST_ASSERT_EQUAL_INT32(2147483582, q16_from_milli(32767999));
 }
@@ -65,8 +65,8 @@ static void test_from_milli_saturates(void)
 static void test_to_milli(void)
 {
     TEST_ASSERT_EQUAL_INT32(1500, q16_to_milli(98304));
-    TEST_ASSERT_EQUAL_INT32(0, q16_to_milli(1));    /* 0.015 -> 0 */
-    TEST_ASSERT_EQUAL_INT32(1, q16_to_milli(33));   /* 0.5035 -> 1 */
+    TEST_ASSERT_EQUAL_INT32(0, q16_to_milli(1));  /* 0.015 -> 0 */
+    TEST_ASSERT_EQUAL_INT32(1, q16_to_milli(33)); /* 0.5035 -> 1 */
     TEST_ASSERT_EQUAL_INT32(-1, q16_to_milli(-33));
     TEST_ASSERT_EQUAL_INT32(333, q16_to_milli(21845));
     TEST_ASSERT_EQUAL_INT32(32768000, q16_to_milli(Q16_MAX));
@@ -108,9 +108,9 @@ static void test_mul_simple_values(void)
 
 static void test_mul_rounds_to_nearest(void)
 {
-    TEST_ASSERT_EQUAL_INT32(1, q16_mul(1, HALF));       /* 0.5 LSB -> 1 */
-    TEST_ASSERT_EQUAL_INT32(-1, q16_mul(-1, HALF));     /* -0.5 LSB -> -1 */
-    TEST_ASSERT_EQUAL_INT32(0, q16_mul(1, HALF - 1));   /* 0.49999 LSB -> 0 */
+    TEST_ASSERT_EQUAL_INT32(1, q16_mul(1, HALF));     /* 0.5 LSB -> 1 */
+    TEST_ASSERT_EQUAL_INT32(-1, q16_mul(-1, HALF));   /* -0.5 LSB -> -1 */
+    TEST_ASSERT_EQUAL_INT32(0, q16_mul(1, HALF - 1)); /* 0.49999 LSB -> 0 */
 }
 
 static void test_mul_needs_64_bit_intermediate(void)
@@ -137,8 +137,8 @@ static void test_div_simple_values(void)
 
 static void test_div_rounds_to_nearest(void)
 {
-    TEST_ASSERT_EQUAL_INT32(21845, q16_div(Q(1), Q(3)));   /* 21845.33 */
-    TEST_ASSERT_EQUAL_INT32(43691, q16_div(Q(2), Q(3)));   /* 43690.67 */
+    TEST_ASSERT_EQUAL_INT32(21845, q16_div(Q(1), Q(3))); /* 21845.33 */
+    TEST_ASSERT_EQUAL_INT32(43691, q16_div(Q(2), Q(3))); /* 43690.67 */
     TEST_ASSERT_EQUAL_INT32(-21845, q16_div(Q(-1), Q(3)));
     TEST_ASSERT_EQUAL_INT32(-43691, q16_div(Q(2), Q(-3)));
 }
@@ -152,7 +152,7 @@ static void test_div_by_zero(void)
 
 static void test_div_saturates(void)
 {
-    TEST_ASSERT_EQUAL_INT32(Q16_MAX, q16_div(Q(30000), 65)); /* 30000 / 0.001 */
+    TEST_ASSERT_EQUAL_INT32(Q16_MAX, q16_div(Q(30000), 65));   /* 30000 / 0.001 */
     TEST_ASSERT_EQUAL_INT32(Q16_MAX, q16_div(Q16_MIN, Q(-1))); /* 32768.0 does not fit */
     TEST_ASSERT_EQUAL_INT32(Q16_MIN, q16_div(Q(-30000), 65));
 }

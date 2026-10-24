@@ -22,9 +22,9 @@
 
 typedef enum {
     OP_OK = 0,
-    OP_ERR_NULL = -1,     /* a required pointer was NULL */
-    OP_ERR_EMPTY = -2,    /* array length was 0 */
-    OP_ERR_DIV_ZERO = -3  /* division by zero */
+    OP_ERR_NULL = -1,    /* a required pointer was NULL */
+    OP_ERR_EMPTY = -2,   /* array length was 0 */
+    OP_ERR_DIV_ZERO = -3 /* division by zero */
 } op_status_t;
 
 /* Exchange the values *a and *b. If either pointer is NULL, do nothing. */
@@ -44,7 +44,8 @@ op_status_t min_max_i16(const int16_t *values, size_t len, int16_t *min_out, int
  *         OP_ERR_DIV_ZERO if divisor == 0,
  *         OP_OK otherwise.
  */
-op_status_t divmod_u32(uint32_t dividend, uint32_t divisor, uint32_t *quotient, uint32_t *remainder);
+op_status_t divmod_u32(uint32_t dividend, uint32_t divisor, uint32_t *quotient,
+                       uint32_t *remainder);
 
 /*
  * Sort the three values so that *a <= *b <= *c.

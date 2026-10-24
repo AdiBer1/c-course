@@ -24,7 +24,7 @@ typedef struct {
     const hal_gpio_t *gpio;
     uint8_t pin;
     bool active_low;
-    bool on;  /* logical state, as last set by the driver */
+    bool on; /* logical state, as last set by the driver */
 } led_t;
 
 /*

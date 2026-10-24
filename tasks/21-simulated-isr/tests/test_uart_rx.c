@@ -167,8 +167,9 @@ static void test_read_line_uses_a_critical_section(void)
     send("go\n");
     uint32_t before = sim_irq_disable_calls();
     TEST_ASSERT_TRUE(uart_rx_read_line(line, sizeof line));
-    TEST_ASSERT_TRUE_MESSAGE(sim_irq_disable_calls() > before,
-                             "uart_rx_read_line must disable interrupts while it changes shared state");
+    TEST_ASSERT_TRUE_MESSAGE(
+        sim_irq_disable_calls() > before,
+        "uart_rx_read_line must disable interrupts while it changes shared state");
     TEST_ASSERT_TRUE_MESSAGE(sim_irq_enabled(), "interrupts must be enabled again when it returns");
 }
 
@@ -190,7 +191,7 @@ static void test_byte_arriving_during_critical_section_is_not_lost(void)
     hal_irq_disable(); /* pretend the main loop is inside a critical section */
     sim_uart_receive('\n');
     TEST_ASSERT_EQUAL_UINT32(2, sim_isr_runs()); /* the ISR has not run yet */
-    hal_irq_enable(); /* now the pending interrupt is taken */
+    hal_irq_enable();                            /* now the pending interrupt is taken */
     TEST_ASSERT_TRUE(uart_rx_read_line(line, sizeof line));
     TEST_ASSERT_EQUAL_STRING("ab", line);
 }

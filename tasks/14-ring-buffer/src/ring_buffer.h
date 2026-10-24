@@ -35,18 +35,18 @@
 
 typedef enum {
     RB_OK = 0,
-    RB_ERR_NULL,  /* rb (or another required pointer) is NULL */
-    RB_ERR_SIZE,  /* rb_init: size is 0 */
-    RB_ERR_FULL,  /* push into a full buffer */
-    RB_ERR_EMPTY  /* pop/peek from an empty buffer */
+    RB_ERR_NULL, /* rb (or another required pointer) is NULL */
+    RB_ERR_SIZE, /* rb_init: size is 0 */
+    RB_ERR_FULL, /* push into a full buffer */
+    RB_ERR_EMPTY /* pop/peek from an empty buffer */
 } rb_status_t;
 
 typedef struct {
-    uint8_t *buf;  /* caller's storage */
-    size_t size;   /* capacity in bytes: ALL `size` bytes can be used */
-    size_t head;   /* index where the next byte is written */
-    size_t tail;   /* index of the oldest byte */
-    size_t count;  /* number of bytes stored */
+    uint8_t *buf; /* caller's storage */
+    size_t size;  /* capacity in bytes: ALL `size` bytes can be used */
+    size_t head;  /* index where the next byte is written */
+    size_t tail;  /* index of the oldest byte */
+    size_t count; /* number of bytes stored */
 } ring_buffer_t;
 
 /* Set up an empty buffer over storage[0..size-1]. */

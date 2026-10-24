@@ -36,7 +36,8 @@ static void step(uint32_t ms)
 static void assert_lamps(gpio_level_t red, gpio_level_t yellow, gpio_level_t green)
 {
     TEST_ASSERT_EQUAL_INT_MESSAGE(red, mock_gpio_output(&gpio_mock, TL_PIN_RED), "red lamp");
-    TEST_ASSERT_EQUAL_INT_MESSAGE(yellow, mock_gpio_output(&gpio_mock, TL_PIN_YELLOW), "yellow lamp");
+    TEST_ASSERT_EQUAL_INT_MESSAGE(yellow, mock_gpio_output(&gpio_mock, TL_PIN_YELLOW),
+                                  "yellow lamp");
     TEST_ASSERT_EQUAL_INT_MESSAGE(green, mock_gpio_output(&gpio_mock, TL_PIN_GREEN), "green lamp");
 }
 
@@ -138,7 +139,7 @@ static void test_new_phase_starts_at_the_time_of_the_change(void)
 static void test_works_across_clock_wrap_around(void)
 {
     start_at(0xFFFFFFFFu - 2000u); /* the counter wraps 2 s into RED */
-    step(100); /* "now >= start + duration" wrongly says RED is over here */
+    step(100);                     /* "now >= start + duration" wrongly says RED is over here */
     TEST_ASSERT_EQUAL_INT(TL_RED, tl_phase(&tl));
     step(2900);
     TEST_ASSERT_EQUAL_INT(TL_RED, tl_phase(&tl));

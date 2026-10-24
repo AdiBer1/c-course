@@ -46,21 +46,21 @@ typedef enum {
 } pkt_state_t;
 
 typedef enum {
-    PKT_NONE = 0,      /* byte consumed, no packet finished yet */
-    PKT_COMPLETE,      /* a valid packet was just received */
-    PKT_ERR_LENGTH,    /* LEN was too big; frame dropped */
-    PKT_ERR_CHECKSUM   /* checksum mismatch; frame dropped */
+    PKT_NONE = 0,    /* byte consumed, no packet finished yet */
+    PKT_COMPLETE,    /* a valid packet was just received */
+    PKT_ERR_LENGTH,  /* LEN was too big; frame dropped */
+    PKT_ERR_CHECKSUM /* checksum mismatch; frame dropped */
 } pkt_result_t;
 
 typedef struct {
     pkt_state_t state;
-    uint8_t len;                       /* LEN of the frame being received */
-    uint8_t index;                     /* payload bytes received so far */
-    uint8_t checksum;                  /* running XOR */
-    uint8_t payload[PKT_MAX_PAYLOAD];  /* payload of the frame being received */
-    uint8_t done_len;                  /* length of the last COMPLETE payload */
-    uint8_t done[PKT_MAX_PAYLOAD];     /* copy of the last COMPLETE payload */
-    uint32_t errors;                   /* number of ERR_LENGTH + ERR_CHECKSUM so far */
+    uint8_t len;                      /* LEN of the frame being received */
+    uint8_t index;                    /* payload bytes received so far */
+    uint8_t checksum;                 /* running XOR */
+    uint8_t payload[PKT_MAX_PAYLOAD]; /* payload of the frame being received */
+    uint8_t done_len;                 /* length of the last COMPLETE payload */
+    uint8_t done[PKT_MAX_PAYLOAD];    /* copy of the last COMPLETE payload */
+    uint32_t errors;                  /* number of ERR_LENGTH + ERR_CHECKSUM so far */
 } pkt_parser_t;
 
 /* Reset to WAIT_START, no completed packet, error counter 0. NULL: nothing. */

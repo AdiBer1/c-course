@@ -7,7 +7,8 @@ void setUp(void) {}
 void tearDown(void) {}
 
 /* Build a register value from fields, for readable tests. */
-static uint32_t reg_of(uint32_t flags, uint32_t mode, uint32_t fifo, uint32_t temp12, uint32_t version)
+static uint32_t reg_of(uint32_t flags, uint32_t mode, uint32_t fifo, uint32_t temp12,
+                       uint32_t version)
 {
     return (flags & 0xFu) | (mode << 4) | (fifo << 8) | ((temp12 & 0xFFFu) << 16) | (version << 28);
 }
@@ -99,8 +100,13 @@ static void test_decode_fields_do_not_leak_into_each_other(void)
 static void test_encode_example(void)
 {
     status_t s = {
-        .ready = true, .error = false, .overrun = true,
-        .mode = DEV_MODE_MEASURE, .fifo_level = 0x42, .temp_sixteenths = -160, .version = 3,
+        .ready = true,
+        .error = false,
+        .overrun = true,
+        .mode = DEV_MODE_MEASURE,
+        .fifo_level = 0x42,
+        .temp_sixteenths = -160,
+        .version = 3,
     };
     TEST_ASSERT_EQUAL_HEX32(reg_of(0x5, 1, 0x42, 0xF60, 3), status_encode(&s));
 }
@@ -130,7 +136,8 @@ static void test_encode_uses_only_low_four_bits_of_version(void)
 
 static void test_decode_encode_round_trip(void)
 {
-    const uint32_t samples[] = {0x00000000u, 0x12345671u, 0x7FF0FF37u, 0xA8001302u, 0xFFFFFFF7u, 0x0190C811u};
+    const uint32_t samples[] = {0x00000000u, 0x12345671u, 0x7FF0FF37u,
+                                0xA8001302u, 0xFFFFFFF7u, 0x0190C811u};
     for (unsigned i = 0; i < sizeof samples / sizeof samples[0]; i++) {
         uint32_t reg = samples[i] & ~0x8u; /* reserved bit encodes as 0 */
         status_t s = status_decode(reg);

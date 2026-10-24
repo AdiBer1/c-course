@@ -7,7 +7,7 @@
  *
  * Do not change this file.
  */
-#ifndef MATHX_H   /* include guard: the body is read only once per .c file */
+#ifndef MATHX_H /* include guard: the body is read only once per .c file */
 #define MATHX_H
 
 /* Return x * x. Example: square(7) == 49, square(-3) == 9. */

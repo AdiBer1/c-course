@@ -1,4 +1,4 @@
-#define _POSIX_C_SOURCE 200809L  /* for popen(), access() */
+#define _POSIX_C_SOURCE 200809L /* for popen(), access() */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -121,8 +121,8 @@ static void test_makefile_rebuilds_when_header_changes(void)
 
     /* make -q exits 1 when something must be rebuilt, 0 when all is up to date. */
     TEST_ASSERT_EQUAL_INT_MESSAGE(1, make_in_src("-q"),
-        "after mathx.h changed, make thinks everything is up to date: "
-        "the .o files must depend on mathx.h");
+                                  "after mathx.h changed, make thinks everything is up to date: "
+                                  "the .o files must depend on mathx.h");
 }
 
 static void test_makefile_clean_removes_outputs(void)

@@ -35,8 +35,8 @@ void hal_irq_enable(void);
 void hal_uart_attach_isr(isr_fn_t isr);
 
 /* ---- test side */
-void sim_uart_reset(void);            /* detach ISR, enable interrupts, clear counters */
-void sim_uart_receive(uint8_t byte);  /* a byte arrives on the wire */
+void sim_uart_reset(void);           /* detach ISR, enable interrupts, clear counters */
+void sim_uart_receive(uint8_t byte); /* a byte arrives on the wire */
 bool sim_irq_enabled(void);
 uint32_t sim_irq_disable_calls(void); /* how often hal_irq_disable() was called */
 uint32_t sim_uart_overruns(void);     /* bytes lost in the data register itself */

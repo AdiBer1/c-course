@@ -10,13 +10,9 @@
  *     hal_irq_disable() / hal_irq_enable()
  */
 
-void uart_rx_init(void)
-{
-}
+void uart_rx_init(void) {}
 
-void uart_rx_isr(void)
-{
-}
+void uart_rx_isr(void) {}
 
 bool uart_rx_line_ready(void)
 {

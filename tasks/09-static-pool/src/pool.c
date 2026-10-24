@@ -4,9 +4,7 @@
 
 /* TODO: declare the static storage and bookkeeping, then implement. */
 
-void pool_init(void)
-{
-}
+void pool_init(void) {}
 
 void *pool_alloc(void)
 {
