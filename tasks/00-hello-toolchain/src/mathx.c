@@ -2,14 +2,22 @@
 
 int square(int x)
 {
-    (void)x; /* TODO: remove this line and implement */
-    return 0;
+    (void)x;
+    return     x=x*x; 
+
 }
 
 int clamp(int x, int lo, int hi)
 {
-    (void)x; /* TODO: remove these lines and implement */
+    (void)x; 
     (void)lo;
     (void)hi;
+    if (x < lo) {
+        return lo;
+    } else if (x > hi) {
+        return hi;
+    } else {
+        return x;
+    }
     return 0;
 }
