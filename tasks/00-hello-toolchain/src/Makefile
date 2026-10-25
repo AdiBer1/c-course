@@ -9,5 +9,19 @@
 #
 # Remember: the command line of a rule starts with a TAB, not spaces.
 
-hello:
-	@echo "TODO: write the rules that build hello (see the task README)" && false
+
+#	@echo "TODO: write the rules that build hello (see the task README)" && false
+CC = gcc
+CFLAGS = -Wall -Wextra -std=c11
+
+hello: main.o mathx.o
+	$(CC) main.o mathx.o -o hello
+
+main.o: main.c mathx.h
+	$(CC) $(CFLAGS) -c main.c -o main.o
+
+mathx.o: mathx.c mathx.h
+	$(CC) $(CFLAGS) -c mathx.c -o mathx.o
+
+clean:
+	rm -f hello main.o mathx.o
