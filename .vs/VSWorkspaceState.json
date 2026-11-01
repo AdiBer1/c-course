@@ -1,0 +1,13 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\docs\\teacher",
+    "\\tasks",
+    "\\tasks\\00-hello-toolchain",
+    "\\tasks\\00-hello-toolchain\\src",
+    "\\tasks\\01-first-pr",
+    "\\tasks\\02-fixed-width-types"
+  ],
+  "SelectedNode": "\\tasks\\00-hello-toolchain\\src\\mathx.c",
+  "PreviewInSolutionExplorer": false
+}
