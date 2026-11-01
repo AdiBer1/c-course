@@ -15,3 +15,5 @@ The test suite serves as an objective, standardized specification and evaluation
 Answer:
 Because parameters in C are passed by value, max3 receives temporary local copies of the caller's variables. If the function modifies a, it only affects its own local copy on the stack, so the caller's original variables remain completely unchanged and the caller will not notice any difference.
 
+Only the local copy changes; the caller's variable keeps its value because C passes arguments by value.
+
