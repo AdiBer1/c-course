@@ -2,8 +2,11 @@
 
 int max3(int a, int b, int c)
 {
-    (void)a; /* TODO: remove these lines and implement */
-    (void)b;
-    (void)c;
-    return 0;
+    if (a >= b && a >= c)
+        return a;
+
+    if (c >= a && c >= b)
+        return c;
+
+    return b;
 }
