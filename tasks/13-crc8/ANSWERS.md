@@ -10,7 +10,7 @@ Answer:
 ## Q2. Inside `crc8_update`, `crc << 1` on a `uint8_t` produced a `-Wconversion` warning until you cast. What is the type of `crc << 1`, and why is the cast correct here rather than a hack?
 
 Answer:
-`crc << 1` הוא `int` (integer promotion). ה-cast ל-`uint8_t` נכון כי אנחנו רוצים לשמור רק 8 ביטים — זה בדיוק מה שאלגוריתם CRC-8 דורש.
+הסוג של `crc << 1` הוא `int` (signed), בגלל integer promotion. כש-C מחשב `(crc << 1) ^ CRC8_POLY`, ה-`int` נפגש עם `unsigned` (ה-`u` ב-`CRC8_POLY`), ו-C ממיר את ה-`int` ל-`unsigned` בשקט — מכאן האזהרה "המרה עלולה לשנות סימן". ה-cast ל-`uint8_t` נכון ולא hack כי אנחנו מכוונים לחתוך ל-8 ביטים בדיוק — זה חלק מהגדרת אלגוריתם CRC-8.
 
 ## Q3. The bit-by-bit CRC needs 8 loop iterations per byte. A table-driven version uses a 256-byte lookup table and one step per byte. When would you choose each on a microcontroller?
 
