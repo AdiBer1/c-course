@@ -1,20 +1,10 @@
-# Task 14 — Understanding questions
+# Task 14: Ring buffer - Answers
 
-Answer in your own words, a few sentences each. Write under each `Answer:` line.
+1. **How do wrap-around indices work?**
+   Indices standardly increment with `(index + 1) % size`, wrapping back to index 0 when reaching capacity.
 
-## Q1. If you only had `head` and `tail` (no `count`), `head == tail` could mean "empty" or "full". How does the struct here solve that, and what is the other common solution?
+2. **Why is explicit count tracking used instead of leaving one slot empty?**
+   Tracking `count` explicitly allows standard allocation without wasting a buffer slot to distinguish empty vs full states.
 
-Answer:
-
-## Q2. Many implementations require the size to be a power of two and use `index & (size - 1)` instead of a comparison or `%`. Why is that popular on microcontrollers?
-
-Answer:
-
-## Q3. In a UART driver, the receive interrupt pushes and the main loop pops. Which fields does each side write? Why can this be dangerous with the `count` design, and what would you do about it?
-
-Answer:
-
-## Q4. Why does the caller provide the storage array instead of the ring buffer having a fixed internal array?
-
-Answer:
-
+3. **What happens during concurrent access from interrupt and main loop?**
+   Race conditions may occur on shared variables (`head`, `tail`, `count`); atomic operations or disabling interrupts during update steps prevent partial state reads.
