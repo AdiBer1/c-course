@@ -6,8 +6,28 @@
 
 parse_status_t parse_command(const char *line, command_t *out)
 {
-    (void)line;
-    (void)out;
+    size_t len = 0;
+
+    /* 1. NULL */
+    if (line == NULL || out == NULL) {
+        return PARSE_ERR_NULL;
+    }
+
+    /* 2. length without the optional line ending */
+    while (line[len] != '\0') {
+        len++;
+    }
+    if (len > 0 && line[len - 1] == '\n') {
+        len--;
+        if (len > 0 && line[len - 1] == '\r') {
+            len--;
+        }
+    }
+    if (len == 0) {
+        return PARSE_ERR_EMPTY;
+    }
+
+    /* TODO: key and value (next steps) */
     return PARSE_OK;
 }
 
