@@ -23,6 +23,8 @@ parse_status_t parse_command(const char *line, command_t *out)
 {
     size_t len = 0;
     size_t i = 0;
+    int negative = 0;
+    int32_t value = 0;
 
     /* 1. NULL */
     if (line == NULL || out == NULL) {
@@ -66,6 +68,7 @@ parse_status_t parse_command(const char *line, command_t *out)
 
         /* 4. value syntax: [ '-' ] digit { digit } */
     if (i < len && line[i] == '-') {
+        negative = 1;
         i++;
     }
     if (i == len) {
@@ -77,7 +80,19 @@ parse_status_t parse_command(const char *line, command_t *out)
         }
     }
 
-    /* TODO: convert and range check (next step) */
+        /* 5. convert, checking the range before every step */
+    for (; i < len; i++) {
+        int32_t digit = line[i] - '0';
+        if (value > (PARSE_VALUE_MAX - digit) / 10) {
+            return PARSE_ERR_RANGE;
+        }
+        value = value * 10 + digit;
+    }
+    if (negative) {
+        value = -value;
+    }
+
+    /* TODO: fill *out (next step) */
     return PARSE_OK;
 }
 
