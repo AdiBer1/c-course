@@ -37,7 +37,7 @@ size_t log_count(void)
 
 int16_t log_get(size_t index)
 {
-    if (index > count) {
+    if (index >= count) {
         return 0;
     }
     return values[index];
