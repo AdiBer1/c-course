@@ -85,9 +85,21 @@ uint32_t pkt_error_count(const pkt_parser_t *p)
 
 size_t pkt_build(uint8_t *out, size_t out_size, const uint8_t *payload, uint8_t len)
 {
-    (void)out;
-    (void)out_size;
-    (void)payload;
-    (void)len;
-    return 0;
+    if (out == NULL || len > PKT_MAX_PAYLOAD || (payload == NULL && len > 0)) {
+        return 0;
+    }
+    size_t frame_size = (size_t)len + 3u;
+    if (out_size < frame_size) {
+        return 0;
+    }
+
+    uint8_t checksum = len;
+    out[0] = PKT_START;
+    out[1] = len;
+    for (uint8_t i = 0; i < len; i++) {
+        out[2 + i] = payload[i];
+        checksum ^= payload[i];
+    }
+    out[2 + len] = checksum;
+    return frame_size;
 }
