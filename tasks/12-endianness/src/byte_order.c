@@ -4,14 +4,12 @@
 
 uint16_t rd_u16_le(const uint8_t *p)
 {
-    (void)p;
-    return 0;
+    return (uint16_t)((uint16_t)p[0] | ((uint16_t)p[1] << 8));
 }
 
 uint16_t rd_u16_be(const uint8_t *p)
 {
-    (void)p;
-    return 0;
+    return (uint16_t)(((uint16_t)p[0] << 8) | (uint16_t)p[1]);
 }
 
 uint32_t rd_u32_le(const uint8_t *p)
