@@ -52,11 +52,16 @@ void wr_u32_be(uint8_t *p, uint32_t v)
 
 int16_t rd_i16_be(const uint8_t *p)
 {
-    (void)p;
-    return 0;
+    int32_t u = rd_u16_be(p);
+    if (u > INT16_MAX) {
+        u -= 65536;
+    }
+    return (int16_t)u;
 }
 
 bool host_is_little_endian(void)
 {
-    return false;
+    uint16_t x = 1;
+    const uint8_t *bytes = (const uint8_t *)&x;
+    return bytes[0] == 1;
 }
