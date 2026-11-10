@@ -64,7 +64,20 @@ parse_status_t parse_command(const char *line, command_t *out)
     }
     i++; /* skip '=' */
 
-    /* TODO: value (next step) */
+        /* 4. value syntax: [ '-' ] digit { digit } */
+    if (i < len && line[i] == '-') {
+        i++;
+    }
+    if (i == len) {
+        return PARSE_ERR_BAD_VALUE;
+    }
+    for (size_t j = i; j < len; j++) {
+        if (!is_digit(line[j])) {
+            return PARSE_ERR_BAD_VALUE;
+        }
+    }
+
+    /* TODO: convert and range check (next step) */
     return PARSE_OK;
 }
 
