@@ -17,8 +17,52 @@ void pkt_init(pkt_parser_t *p)
 
 pkt_result_t pkt_feed(pkt_parser_t *p, uint8_t byte)
 {
-    (void)p;
-    (void)byte;
+    if (p == NULL) {
+        return PKT_NONE;
+    }
+
+    switch (p->state) {
+    case PKT_STATE_WAIT_START:
+        if (byte == PKT_START) {
+            p->state = PKT_STATE_LEN;
+        }
+        return PKT_NONE;
+
+    case PKT_STATE_LEN:
+        if (byte > PKT_MAX_PAYLOAD) {
+            p->errors++;
+            p->state = PKT_STATE_WAIT_START;
+            return PKT_ERR_LENGTH;
+        }
+        p->len = byte;
+        p->index = 0;
+        p->checksum = byte;
+        p->state = (byte == 0) ? PKT_STATE_CHECKSUM : PKT_STATE_PAYLOAD;
+        return PKT_NONE;
+
+    case PKT_STATE_PAYLOAD:
+        p->payload[p->index] = byte;
+        p->index++;
+        p->checksum ^= byte;
+        if (p->index == p->len) {
+            p->state = PKT_STATE_CHECKSUM;
+        }
+        return PKT_NONE;
+
+    case PKT_STATE_CHECKSUM:
+        p->state = PKT_STATE_WAIT_START;
+        if (byte != p->checksum) {
+            p->errors++;
+            return PKT_ERR_CHECKSUM;
+        }
+        for (uint8_t i = 0; i < p->len; i++) {
+            p->done[i] = p->payload[i];
+        }
+        p->done_len = p->len;
+        return PKT_COMPLETE;
+    }
+
+    p->state = PKT_STATE_WAIT_START;
     return PKT_NONE;
 }
 
