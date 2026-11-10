@@ -24,26 +24,30 @@ uint32_t rd_u32_be(const uint8_t *p)
 
 void wr_u16_le(uint8_t *p, uint16_t v)
 {
-    (void)p;
-    (void)v;
+    p[0] = (uint8_t)(v & 0xFFu);
+    p[1] = (uint8_t)(v >> 8);
 }
 
 void wr_u16_be(uint8_t *p, uint16_t v)
 {
-    (void)p;
-    (void)v;
+    p[0] = (uint8_t)(v >> 8);
+    p[1] = (uint8_t)(v & 0xFFu);
 }
 
 void wr_u32_le(uint8_t *p, uint32_t v)
 {
-    (void)p;
-    (void)v;
+    p[0] = (uint8_t)(v & 0xFFu);
+    p[1] = (uint8_t)((v >> 8) & 0xFFu);
+    p[2] = (uint8_t)((v >> 16) & 0xFFu);
+    p[3] = (uint8_t)(v >> 24);
 }
 
 void wr_u32_be(uint8_t *p, uint32_t v)
 {
-    (void)p;
-    (void)v;
+    p[0] = (uint8_t)(v >> 24);
+    p[1] = (uint8_t)((v >> 16) & 0xFFu);
+    p[2] = (uint8_t)((v >> 8) & 0xFFu);
+    p[3] = (uint8_t)(v & 0xFFu);
 }
 
 int16_t rd_i16_be(const uint8_t *p)
