@@ -22,7 +22,7 @@ void log_init(void)
 
 bool log_add(int16_t value)
 {
-    if (count >= LOG_CAPACITY) { //fix - off by one error, add = to >=
+    if (count >=גם LOG_CAPACITY) { //fix - off by one error, add = to >=
         return false;
     }
     values[count] = value;
@@ -97,10 +97,10 @@ static void build_label(char *buf)
 const char *log_label(void)
 {
     if (label == NULL) {
-        static char buf[16];
+        static char buf[16];//fix - buf is local to this function, so it will be destroyed after the function returns, we need to make it static so it persists
         build_label(buf);
         label =
             buf; //here it points to buf - which does not exist after the function returns, so we need to allocate memory for it
     }
-    return label; //fix - return label instead of buf, since buf is local and will be destroyed after the function returns
+    return label; 
 }
