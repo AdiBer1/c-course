@@ -22,7 +22,7 @@ void log_init(void)
 
 bool log_add(int16_t value)
 {
-    if (count > LOG_CAPACITY) {
+    if (count >= LOG_CAPACITY) { //fix - off by one error, add = to >=
         return false;
     }
     values[count] = value;
@@ -37,7 +37,7 @@ size_t log_count(void)
 
 int16_t log_get(size_t index)
 {
-    if (index > count) {
+    if (index >= count) { //again, off by one error, should be >= instead of >
         return 0;
     }
     return values[index];
@@ -45,7 +45,11 @@ int16_t log_get(size_t index)
 
 int16_t log_average(void)
 {
-    int16_t sum = 0;
+    if (count == 0) { //fix - divide by zero error, check if count is 0
+        return 0;
+    }
+    int32_t sum = 0; //fix - sum can overflow int16_t, use int32_t instead
+
     for (size_t i = 0; i < count; i++) {
         sum += values[i];
     }
@@ -54,9 +58,12 @@ int16_t log_average(void)
 
 size_t log_copy_last(int16_t *dst, size_t dst_len, size_t n)
 {
-    (void)dst_len;
     if (n > count) {
         n = count;
+    }
+    if (n
+        > dst_len) { //fix - Destination buffer overflow, if n is greater than dst_len, we should limit it
+        n = dst_len;
     }
     size_t first = count - n;
     for (size_t i = 0; i < n; i++) {
@@ -90,9 +97,10 @@ static void build_label(char *buf)
 const char *log_label(void)
 {
     if (label == NULL) {
-        char buf[16];
+        static char buf[16];
         build_label(buf);
-        label = buf;
+        label =
+            buf; //here it points to buf - which does not exist after the function returns, so we need to allocate memory for it
     }
-    return label;
+    return label; //fix - return label instead of buf, since buf is local and will be destroyed after the function returns
 }
