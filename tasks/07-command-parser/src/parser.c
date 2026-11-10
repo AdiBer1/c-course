@@ -23,6 +23,7 @@ parse_status_t parse_command(const char *line, command_t *out)
 {
     size_t len = 0;
     size_t i = 0;
+    size_t key_len = 0;
     int negative = 0;
     int32_t value = 0;
 
@@ -45,7 +46,7 @@ parse_status_t parse_command(const char *line, command_t *out)
         return PARSE_ERR_EMPTY;
     }
 
-        /* 3. key: from the start up to the first '=' */
+    /* 3. key: from the start up to the first '=' */
     while (i < len && line[i] != '=') {
         if (i == 0 && !is_upper(line[i])) {
             return PARSE_ERR_BAD_KEY;
@@ -64,9 +65,10 @@ parse_status_t parse_command(const char *line, command_t *out)
     if (i > PARSE_KEY_MAX) {
         return PARSE_ERR_KEY_TOO_LONG;
     }
+    key_len = i;
     i++; /* skip '=' */
 
-        /* 4. value syntax: [ '-' ] digit { digit } */
+    /* 4. value syntax: [ '-' ] digit { digit } */
     if (i < len && line[i] == '-') {
         negative = 1;
         i++;
@@ -92,7 +94,12 @@ parse_status_t parse_command(const char *line, command_t *out)
         value = -value;
     }
 
-    /* TODO: fill *out (next step) */
+    /* everything is valid: only now write *out */
+    for (size_t k = 0; k < key_len; k++) {
+        out->key[k] = line[k];
+    }
+    out->key[key_len] = '\0';
+    out->value = value;
     return PARSE_OK;
 }
 
