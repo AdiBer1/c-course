@@ -8,7 +8,7 @@ rb_status_t rb_init(ring_buffer_t *rb, uint8_t *storage, size_t size)
     if (size == 0) {
         return RB_ERR_SIZE;
     }
-    
+
     rb->count = 0;
     rb->head = 0;
     rb->tail = 0;
@@ -53,14 +53,14 @@ rb_status_t rb_peek(const ring_buffer_t *rb, uint8_t *out)
     if (rb->count == 0) {
         return RB_ERR_EMPTY;
     }
-    *out = rb->buf[rb->tail]; 
+    *out = rb->buf[rb->tail];
     return RB_OK;
 }
 
 size_t rb_count(const ring_buffer_t *rb)
 {
     if (rb == NULL) {
-        return 0; 
+        return 0;
     }
     return rb->count;
 }
@@ -102,7 +102,7 @@ void rb_clear(ring_buffer_t *rb)
 size_t rb_write(ring_buffer_t *rb, const uint8_t *data, size_t len)
 {
     if (rb == NULL || data == NULL) {
-        return 0; 
+        return 0;
     }
     size_t i = 0;
     for (; i < len; i++) {
@@ -116,13 +116,13 @@ size_t rb_write(ring_buffer_t *rb, const uint8_t *data, size_t len)
 size_t rb_read(ring_buffer_t *rb, uint8_t *dst, size_t len)
 {
     if (rb == NULL || dst == NULL) {
-        return 0; 
+        return 0;
     }
     size_t i = 0;
     for (; i < len; i++) {
         if (rb_pop(rb, &dst[i]) == RB_ERR_EMPTY) {
             return i;
         }
-    }   
+    }
     return i;
 }
