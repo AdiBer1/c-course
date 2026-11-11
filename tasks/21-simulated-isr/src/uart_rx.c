@@ -53,10 +53,6 @@ bool uart_rx_line_ready(void)
 
 bool uart_rx_read_line(char *dst, size_t dst_size)
 {
-    size_t len = 0u;
-    bool truncated = false;
-    bool last_cr = false;
-    bool done = false;
     bool result = false;
 
     if (dst == NULL || dst_size == 0u) {
@@ -65,6 +61,11 @@ bool uart_rx_read_line(char *dst, size_t dst_size)
 
     hal_irq_disable();
     if (lines > 0u) {
+        size_t len = 0u;
+        bool truncated = false;
+        bool last_cr = false;
+        bool done = false;
+
         while (!done) {
             uint8_t c = buf[tail];
 
