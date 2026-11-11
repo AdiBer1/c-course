@@ -2,8 +2,7 @@
 
 int square(int x)
 {
-    (void)x; /* TODO: remove this line and implement */
-    return 0;
+    return x * x;
 }
 
 int clamp(int x, int lo, int hi)
