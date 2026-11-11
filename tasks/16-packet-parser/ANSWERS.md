@@ -1,20 +1,10 @@
-# Task 16 — Understanding questions
+# Task 16: Packet Parser - Answers
 
-Answer in your own words, a few sentences each. Write under each `Answer:` line.
+1. **Why is byte-by-byte state machine parsing suitable for embedded serial streams?**
+   It allows stream processing without allocating large buffers or blocking execution, handling non-contiguous input gracefully.
 
-## Q1. Why must the parser check `LEN > PKT_MAX_PAYLOAD` before storing any payload byte? What would a corrupted LEN of 200 do otherwise?
+2. **How does framing with start bytes, length fields, and checksums ensure data integrity?**
+   Start bytes synchronization identifies frame boundaries, length fields define expected boundaries, and checksums detect corruption.
 
-Answer:
-
-## Q2. Bytes are lost on the wire: the receiver misses the LEN byte of a frame. Walk through what your state machine does and how it gets back in sync.
-
-Answer:
-
-## Q3. Why does the parser keep a separate `done[]` copy of the last complete payload, instead of letting the caller read `payload[]` directly?
-
-Answer:
-
-## Q4. A XOR checksum is used here. What kind of error can it NOT detect, and when would you use the CRC-8 from task 13 instead?
-
-Answer:
-
+3. **What happens when a corrupt byte or invalid length is encountered?**
+   The parser drops the frame, increments the error counter, and immediately resets to `WAIT_START` to resynchronize on the next valid packet.
