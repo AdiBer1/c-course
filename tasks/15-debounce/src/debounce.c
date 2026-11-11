@@ -1,3 +1,6 @@
+#include <stddef.h>
+#include <stdint.h>
+#include <stdbool.h>
 #include "debounce.h"
 
 void debounce_init(debounce_t *d, uint8_t threshold_ticks)
