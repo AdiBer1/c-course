@@ -7,8 +7,10 @@ int square(int x)
 
 int clamp(int x, int lo, int hi)
 {
-    (void)x; /* TODO: remove these lines and implement */
-    (void)lo;
-    (void)hi;
-    return 0;
+    if (x < lo) {
+        return lo;
+    } else if (x > hi) {
+        return hi;
+    }
+    return x;
 }
