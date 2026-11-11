@@ -12,7 +12,7 @@
 #include "sensor_log.h"
 
 static int16_t values[LOG_CAPACITY];
-static size_t count;
+static size_t count; //0-8
 static const char *label;
 
 void log_init(void)
@@ -22,7 +22,7 @@ void log_init(void)
 
 bool log_add(int16_t value)
 {
-    if (count > LOG_CAPACITY) {
+    if (count >= LOG_CAPACITY) {
         return false;
     }
     values[count] = value;
@@ -37,7 +37,7 @@ size_t log_count(void)
 
 int16_t log_get(size_t index)
 {
-    if (index > count) {
+    if (index >= count) {
         return 0;
     }
     return values[index];
@@ -45,18 +45,24 @@ int16_t log_get(size_t index)
 
 int16_t log_average(void)
 {
-    int16_t sum = 0;
+    int32_t sum = 0;
+    if (count == 0) {
+        return 0;
+    }
     for (size_t i = 0; i < count; i++) {
         sum += values[i];
     }
-    return (int16_t)(sum / (int16_t)count);
+    return (int16_t)(sum / (int32_t)count);
 }
 
 size_t log_copy_last(int16_t *dst, size_t dst_len, size_t n)
 {
-    (void)dst_len;
     if (n > count) {
         n = count;
+    }
+    /* FIX 5: dst_len was ignored, so a small dst was overflowed. */
+    if (n > dst_len) {
+        n = dst_len;
     }
     size_t first = count - n;
     for (size_t i = 0; i < n; i++) {
@@ -90,7 +96,7 @@ static void build_label(char *buf)
 const char *log_label(void)
 {
     if (label == NULL) {
-        char buf[16];
+        static char buf[16];
         build_label(buf);
         label = buf;
     }
