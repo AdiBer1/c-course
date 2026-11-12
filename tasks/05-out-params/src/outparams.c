@@ -54,8 +54,25 @@ op_status_t divmod_u32(uint32_t dividend, uint32_t divisor, uint32_t *quotient, 
 
 op_status_t sort3_i32(int32_t *a, int32_t *b, int32_t *c)
 {
-    (void)a;
-    (void)b;
-    (void)c;
+    if (a == NULL || b == NULL || c == NULL) {
+        return OP_ERR_NULL;
+    }
+
+    if (*a > *b) {
+        int32_t temp = *a;
+        *a = *b;
+        *b = temp;
+    }
+    if (*b > *c) {
+        int32_t temp = *b;
+        *b = *c;
+        *c = temp;
+    }
+    if (*a > *b) {
+        int32_t temp = *a;
+        *a = *b;
+        *b = temp;
+    }
+
     return OP_OK;
 }
