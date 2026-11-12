@@ -14,10 +14,27 @@ void swap_i32(int32_t *a, int32_t *b)
 
 op_status_t min_max_i16(const int16_t *values, size_t len, int16_t *min_out, int16_t *max_out)
 {
-    (void)values;
-    (void)len;
-    (void)min_out;
-    (void)max_out;
+    if (values == NULL || min_out == NULL || max_out == NULL) {
+        return OP_ERR_NULL;
+    }
+    if (len == 0) {
+        return OP_ERR_EMPTY;
+    }
+
+    int16_t local_min = values[0];
+    int16_t local_max = values[0];
+
+    for (size_t i = 1; i < len; i++) {
+        if (values[i] < local_min) {
+            local_min = values[i];
+        }
+        if (values[i] > local_max) {
+            local_max = values[i];
+        }
+    }
+
+    *min_out = local_min;
+    *max_out = local_max;
     return OP_OK;
 }
 
