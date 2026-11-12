@@ -78,7 +78,10 @@ bool rb_is_empty(const ring_buffer_t *rb)
 
 bool rb_is_full(const ring_buffer_t *rb)
 {
-    (void)rb;
+    if ( rb == NULL )
+      return false;
+    if (rb-> count == rb-> size)
+      return true;
     return false;
 }
 
