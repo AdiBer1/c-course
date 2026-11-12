@@ -1,12 +1,16 @@
 #include "ring_buffer.h"
 
-/* TODO: implement every function. */
-
 rb_status_t rb_init(ring_buffer_t *rb, uint8_t *storage, size_t size)
 {
-    (void)rb;
-    (void)storage;
-    (void)size;
+     if ( rb==NULL || storage == NULL )
+       return RB_ERR_NULL;
+    if ( size ==0 )
+       return RB_ERR_SIZE;
+    rb->buf = storage;
+    rb->size = size;
+    rb->head = 0;  
+    rb->tail = 0;
+    rb->count =0;
     return RB_OK;
 }
 
