@@ -87,7 +87,11 @@ bool rb_is_full(const ring_buffer_t *rb)
 
 void rb_clear(ring_buffer_t *rb)
 {
-    (void)rb;
+if ( rb ==NULL )
+     return;
+    rb-> head = 0;  
+    rb-> tail = 0;
+    rb-> count =0;
 }
 
 size_t rb_write(ring_buffer_t *rb, const uint8_t *data, size_t len)
