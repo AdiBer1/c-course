@@ -58,9 +58,11 @@ int16_t log_average(void)
 
 size_t log_copy_last(int16_t *dst, size_t dst_len, size_t n)
 {
-    (void)dst_len;
-    if (n > count) {
+     if (n > count) {
         n = count;
+    }
+    if (n > dst_len){
+        n = dst_len;
     }
     size_t first = count - n;
     for (size_t i = 0; i < n; i++) {
