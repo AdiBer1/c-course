@@ -4,8 +4,12 @@
 
 void swap_i32(int32_t *a, int32_t *b)
 {
-    (void)a;
-    (void)b;
+    if (a == NULL || b == NULL) {
+        return;
+    }
+    int32_t temp = *a;
+    *a = *b;
+    *b = temp;
 }
 
 op_status_t min_max_i16(const int16_t *values, size_t len, int16_t *min_out, int16_t *max_out)
