@@ -1,7 +1,5 @@
 #include "saturate.h"
 
-/* TODO: implement every function. Each one currently returns 0. */
-
 uint8_t sat_add_u8(uint8_t a, uint8_t b)
 {
     if (b > UINT8_MAX - a)
