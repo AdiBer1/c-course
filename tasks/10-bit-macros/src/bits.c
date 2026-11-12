@@ -17,6 +17,5 @@ bool bits_is_power_of_two(uint32_t x)
 
 uint8_t bits_swap_nibbles(uint8_t x)
 {
-    (void)x;
-    return 0;
+    return (uint8_t)((uint8_t)(x << 4) | (uint8_t)(x >> 4));
 }
