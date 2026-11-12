@@ -40,10 +40,15 @@ op_status_t min_max_i16(const int16_t *values, size_t len, int16_t *min_out, int
 
 op_status_t divmod_u32(uint32_t dividend, uint32_t divisor, uint32_t *quotient, uint32_t *remainder)
 {
-    (void)dividend;
-    (void)divisor;
-    (void)quotient;
-    (void)remainder;
+    if (quotient == NULL || remainder == NULL) {
+        return OP_ERR_NULL;
+    }
+    if (divisor == 0) {
+        return OP_ERR_DIV_ZERO;
+    }
+
+    *quotient = dividend / divisor;
+    *remainder = dividend % divisor;
     return OP_OK;
 }
 
