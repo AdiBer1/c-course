@@ -1,14 +1,3 @@
-/*
- * sensor_log.c - CONTAINS 6 BUGS. Find and fix them all.
- *
- * Most of them are memory bugs: the code compiles and "works" most of the
- * time, which is exactly what makes them dangerous. Use the tools:
- *   make test     AddressSanitizer / UBSan reports show the line and the
- *                 kind of bad access; the tests show what is wrong
- *   make score    the summary of what is still wrong
- *
- * Change as little as possible: this is a bug hunt, not a rewrite.
- */
 #include "sensor_log.h"
 
 static int16_t values[LOG_CAPACITY];
@@ -22,7 +11,7 @@ void log_init(void)
 
 bool log_add(int16_t value)
 {
-    if (count > LOG_CAPACITY) {
+    if (count >= LOG_CAPACITY) {
         return false;
     }
     values[count] = value;
@@ -37,7 +26,7 @@ size_t log_count(void)
 
 int16_t log_get(size_t index)
 {
-    if (index > count) {
+    if (index >= count) {
         return 0;
     }
     return values[index];
@@ -45,8 +34,8 @@ int16_t log_get(size_t index)
 
 int16_t log_average(void)
 {
-      if(count==0){
-      return 0;
+    if (count == 0) {
+        return 0;
     }
     int32_t sum = 0;
     for (size_t i = 0; i < count; i++) {
@@ -58,10 +47,10 @@ int16_t log_average(void)
 
 size_t log_copy_last(int16_t *dst, size_t dst_len, size_t n)
 {
-     if (n > count) {
+    if (n > count) {
         n = count;
     }
-    if (n > dst_len){
+    if (n > dst_len) {
         n = dst_len;
     }
     size_t first = count - n;
@@ -95,7 +84,7 @@ static void build_label(char *buf)
 const char *log_label(void)
 {
     if (label == NULL) {
-        char buf[16];
+        static char buf[16];
         build_label(buf);
         label = buf;
     }
