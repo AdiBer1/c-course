@@ -71,7 +71,8 @@ size_t rb_free(const ring_buffer_t *rb)
 
 bool rb_is_empty(const ring_buffer_t *rb)
 {
-    (void)rb;
+   if( rb == NULL || rb->count ==0 )
+      return true;
     return false;
 }
 
