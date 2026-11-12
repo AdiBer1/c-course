@@ -56,8 +56,10 @@ rb_status_t rb_peek(const ring_buffer_t *rb, uint8_t *out)
 
 size_t rb_count(const ring_buffer_t *rb)
 {
-    (void)rb;
-    return 0;
+        if (rb == NULL )
+      return 0;
+    return rb->count;
+
 }
 
 size_t rb_free(const ring_buffer_t *rb)
