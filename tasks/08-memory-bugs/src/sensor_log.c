@@ -71,7 +71,6 @@ size_t log_copy_last(int16_t *dst, size_t dst_len, size_t n)
     return n;
 }
 
-/* Writes "sensor-log/<LOG_CAPACITY>" into buf (buf must hold 16 chars). */
 static void build_label(char *buf)
 {
     const char prefix[] = "sensor-log/";
