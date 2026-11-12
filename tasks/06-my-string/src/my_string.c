@@ -17,10 +17,21 @@ size_t my_strlen(const char *s)
 
 size_t my_strlcpy(char *dst, const char *src, size_t dst_size)
 {
-    (void)dst;
-    (void)src;
-    (void)dst_size;
-    return 0;
+        if (src == NULL) {
+        src = "";
+    }
+
+    if (dst != NULL && dst_size > 0) {
+        size_t place = 0;
+        while (place + 1 < dst_size && *(src + place) != '\0')
+        {
+            dst[place] = src[place];
+            place++;
+        }
+        dst[place] = '\0';
+    }
+
+    return my_strlen(src);
 }
 
 int my_strcmp(const char *a, const char *b)
