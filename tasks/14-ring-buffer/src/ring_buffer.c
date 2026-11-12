@@ -107,8 +107,12 @@ size_t rb_write(ring_buffer_t *rb, const uint8_t *data, size_t len)
 
 size_t rb_read(ring_buffer_t *rb, uint8_t *dst, size_t len)
 {
-    (void)rb;
-    (void)dst;
-    (void)len;
-    return 0;
+    if ( rb == NULL || dst == NULL )
+      return 0;
+    for ( size_t i=0; i<len; i++ ){
+       if ( rb_pop(rb, &dst[i]) != RB_OK )
+         return i;
+    }
+    return len;
+
 }
