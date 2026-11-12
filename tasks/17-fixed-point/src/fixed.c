@@ -26,7 +26,6 @@ int32_t q16_to_int(q16_t x)
 
 q16_t q16_from_milli(int32_t milli)
 {
-    // milli * 65536 / 1000, rounded, halves away from zero, saturated
     int64_t prod = (int64_t)milli * Q16_ONE;
     int64_t rounded = 0;
     if (prod >= 0) {
@@ -45,7 +44,6 @@ q16_t q16_from_milli(int32_t milli)
 
 int32_t q16_to_milli(q16_t x)
 {
-    // x * 1000 / 65536, rounded, halves away from zero
     int64_t prod = (int64_t)x * 1000;
     int64_t rounded = 0;
     if (prod >= 0) {
@@ -64,16 +62,26 @@ int32_t q16_to_milli(q16_t x)
 
 q16_t q16_add(q16_t a, q16_t b)
 {
-    (void)a;
-    (void)b;
-    return 0;
+    int64_t sum = (int64_t)a + (int64_t)b;
+    if (sum > INT32_MAX) {
+        return Q16_MAX;
+    }
+    if (sum < INT32_MIN) {
+        return Q16_MIN;
+    }
+    return (q16_t)sum;
 }
 
 q16_t q16_sub(q16_t a, q16_t b)
 {
-    (void)a;
-    (void)b;
-    return 0;
+    int64_t diff = (int64_t)a - (int64_t)b;
+    if (diff > INT32_MAX) {
+        return Q16_MAX;
+    }
+    if (diff < INT32_MIN) {
+        return Q16_MIN;
+    }
+    return (q16_t)diff;
 }
 
 q16_t q16_mul(q16_t a, q16_t b)
