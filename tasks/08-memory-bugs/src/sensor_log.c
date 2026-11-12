@@ -45,11 +45,15 @@ int16_t log_get(size_t index)
 
 int16_t log_average(void)
 {
-    int16_t sum = 0;
+      if(count==0){
+      return 0;
+    }
+    int32_t sum = 0;
     for (size_t i = 0; i < count; i++) {
         sum += values[i];
     }
-    return (int16_t)(sum / (int16_t)count);
+
+    return (int16_t)(sum / (int32_t)count);
 }
 
 size_t log_copy_last(int16_t *dst, size_t dst_len, size_t n)
