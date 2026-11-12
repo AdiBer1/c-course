@@ -47,6 +47,14 @@ led_state_t led_next_state(led_state_t current, command_t cmd)
 
 const char *command_name(command_t cmd)
 {
-    (void)cmd;
-    return "";
+        switch (cmd) {
+        case CMD_NONE:       return "NONE";
+        case CMD_LED_ON:     return "LED_ON";
+        case CMD_LED_OFF:    return "LED_OFF";
+        case CMD_LED_TOGGLE: return "LED_TOGGLE";
+        case CMD_STATUS:     return "STATUS";
+        case CMD_RESET:      return "RESET";
+        case CMD_UNKNOWN:    return "UNKNOWN";
+        default:             return "INVALID";
+    }
 }
