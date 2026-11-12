@@ -17,9 +17,15 @@ uint8_t crc8_update(uint8_t crc, uint8_t byte)
 
 uint8_t crc8(const uint8_t *data, size_t len)
 {
-    (void)data;
-    (void)len;
-    return CRC8_INIT;
+    if (data == NULL || len == 0) {
+        return CRC8_INIT;
+    }
+
+    uint8_t crc = CRC8_INIT;
+    for (size_t i = 0; i < len; i++) {
+        crc = crc8_update(crc, data[i]);
+    }
+    return crc;
 }
 
 bool crc8_frame_ok(const uint8_t *frame, size_t len)
