@@ -89,13 +89,25 @@ uint32_t status_encode(const status_t *s)
 
 status_t status_read(const volatile uint32_t *reg)
 {
-    (void)reg;
-    status_t s = {0};
-    return s;
+    if (reg == NULL) {
+        return status_decode(0u);
+    }
+    uint32_t val = *reg;
+    return status_decode(val);
 }
 
 int16_t status_temp_celsius(const status_t *s)
 {
-    (void)s;
-    return 0;
+    if (s == NULL) {
+        return 0;
+    }
+    int32_t sixteenths = (int32_t)s->temp_sixteenths;
+    
+    // Round to nearest, halves away from zero
+    if (sixteenths >= 0) {
+        sixteenths = (sixteenths + 8) / 16;
+    } else {
+        sixteenths = (sixteenths - 8) / 16;
+    }
+    return (int16_t)sixteenths;
 }
