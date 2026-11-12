@@ -30,7 +30,12 @@ uint8_t crc8(const uint8_t *data, size_t len)
 
 bool crc8_frame_ok(const uint8_t *frame, size_t len)
 {
-    (void)frame;
-    (void)len;
-    return false;
+    if (frame == NULL || len < 2u) {
+        return false;
+    }
+
+    uint8_t computed = crc8(frame, len - 1u);
+    uint8_t received = frame[len - 1u];
+
+    return computed == received;
 }
