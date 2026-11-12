@@ -17,46 +17,49 @@ q16_t q16_from_int(int32_t x)
 
 int32_t q16_to_int(q16_t x)
 {
-    int32_t int_part = x >> 16;
-    int32_t frac_part = x & 0xFFFF;
-    
     if (x >= 0) {
-        if (frac_part >= 0x8000) {
-            int_part++;
-        }
+        return (int32_t)(((int64_t)x + 0x8000) >> 16);
     } else {
-        if (frac_part > 0x8000 || (frac_part == 0x8000 && (int_part & 1) != 0)) {
-            // Rounds halves away from zero
-            // For negative numbers, away from zero means more negative (subtract 1 from magnitude, or add 1 depending on representation)
-        }
+        return (int32_t)(((int64_t)x - 0x8000) >> 16);
     }
-    
-    // Simpler correct round to nearest, halves away from zero for all 32-bit:
-    int64_t rounded = ((int64_t)x + 0x8000) >> 16;
-    if (x < 0 && (x & 0xFFFF) == 0x8000) {
-        rounded = (x >> 16); // exact half away from zero for negative
-    }
-    
-    // Let's write a robust rounding conversion:
-    int32_t res = 0;
-    if (x >= 0) {
-        res = (int32_t)(((int64_t)x + 0x8000) >> 16);
-    } else {
-        res = (int32_t)(((int64_t)x - 0x8000) >> 16);
-    }
-    return res;
 }
 
 q16_t q16_from_milli(int32_t milli)
 {
-    (void)milli;
-    return 0;
+    // milli * 65536 / 1000, rounded, halves away from zero, saturated
+    int64_t prod = (int64_t)milli * Q16_ONE;
+    int64_t rounded = 0;
+    if (prod >= 0) {
+        rounded = (prod + 500) / 1000;
+    } else {
+        rounded = (prod - 500) / 1000;
+    }
+    if (rounded > INT32_MAX) {
+        return Q16_MAX;
+    }
+    if (rounded < INT32_MIN) {
+        return Q16_MIN;
+    }
+    return (q16_t)rounded;
 }
 
 int32_t q16_to_milli(q16_t x)
 {
-    (void)x;
-    return 0;
+    // x * 1000 / 65536, rounded, halves away from zero
+    int64_t prod = (int64_t)x * 1000;
+    int64_t rounded = 0;
+    if (prod >= 0) {
+        rounded = (prod + 32768) / 65536;
+    } else {
+        rounded = (prod - 32768) / 65536;
+    }
+    if (rounded > INT32_MAX) {
+        return INT32_MAX;
+    }
+    if (rounded < INT32_MIN) {
+        return INT32_MIN;
+    }
+    return (int32_t)rounded;
 }
 
 q16_t q16_add(q16_t a, q16_t b)
