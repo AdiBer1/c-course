@@ -28,9 +28,21 @@ command_t command_classify(char c) {
 
 led_state_t led_next_state(led_state_t current, command_t cmd)
 {
-    (void)current;
-    (void)cmd;
-    return LED_OFF;
+  if (current != LED_OFF && current != LED_ON) {
+        current = LED_OFF;
+    }
+    switch (cmd) {
+        case CMD_LED_ON:
+            return LED_ON;
+        case CMD_LED_OFF:
+            return LED_OFF;
+        case CMD_LED_TOGGLE:
+            return (current == LED_OFF) ? LED_ON : LED_OFF;
+        case CMD_RESET:
+            return LED_OFF;
+        default:
+            return current;
+    }
 }
 
 const char *command_name(command_t cmd)
