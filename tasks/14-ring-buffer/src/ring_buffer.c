@@ -46,8 +46,11 @@ rb_status_t rb_pop(ring_buffer_t *rb, uint8_t *out)
 
 rb_status_t rb_peek(const ring_buffer_t *rb, uint8_t *out)
 {
-    (void)rb;
-    (void)out;
+    if ( rb == NULL || out == NULL )
+      return RB_ERR_NULL;
+    if( rb->count == 0 )
+      return RB_ERR_EMPTY;
+    *out = rb->buf[ rb->tail ];
     return RB_OK;
 }
 
