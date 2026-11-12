@@ -2,8 +2,7 @@
 
 uint8_t sat_add_u8(uint8_t a, uint8_t b)
 {
-    if (b > UINT8_MAX - a)
-    {
+    if (b > UINT8_MAX - a) {
         return UINT8_MAX;
     }
 
@@ -12,8 +11,7 @@ uint8_t sat_add_u8(uint8_t a, uint8_t b)
 
 uint8_t sat_sub_u8(uint8_t a, uint8_t b)
 {
-    if (a < b)
-    {
+    if (a < b) {
         return 0;
     }
 
@@ -22,13 +20,11 @@ uint8_t sat_sub_u8(uint8_t a, uint8_t b)
 
 int16_t sat_add_i16(int16_t a, int16_t b)
 {
-    if (b > 0 && a > INT16_MAX - b)
-    {
+    if (b > 0 && a > INT16_MAX - b) {
         return INT16_MAX;
     }
 
-    if (b < 0 && a < INT16_MIN - b)
-    {
+    if (b < 0 && a < INT16_MIN - b) {
         return INT16_MIN;
     }
 
@@ -37,13 +33,11 @@ int16_t sat_add_i16(int16_t a, int16_t b)
 
 int16_t sat_sub_i16(int16_t a, int16_t b)
 {
-    if (b < 0 && a > INT16_MAX + b)
-    {
+    if (b < 0 && a > INT16_MAX + b) {
         return INT16_MAX;
     }
 
-    if (b > 0 && a < INT16_MIN + b)
-    {
+    if (b > 0 && a < INT16_MIN + b) {
         return INT16_MIN;
     }
 
