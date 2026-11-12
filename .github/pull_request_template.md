@@ -2,6 +2,9 @@
 PR TITLE must be:  [Task 07] - Full Name
 (two-digit task number, then your full name; a check makes sure)
 
+"Full name:" below is REQUIRED (a check makes sure). Please fill in the rest
+too: task number, tick the checklist, answer the three reflection questions.
+
 This repository is PUBLIC: everything written here can be read by anyone.
 Do not write your student ID, phone number or other personal details.
 -->

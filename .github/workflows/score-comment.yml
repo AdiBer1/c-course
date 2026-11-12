@@ -211,6 +211,14 @@ jobs:
               body += `\n> ⚠️ **PR title:** it says Task ${tm[1]}, but this PR changes task ${taskNums[0]}. Please fix the title.\n`;
             }
 
+            // ---------- PR description: "Full name:" is required
+            const desc = (typeof pr.body === 'string' ? pr.body : '').replace(/\r/g, '').replace(/<!--[\s\S]*?-->/g, '');
+            const nameMatch = desc.match(/^[ \t]*\**Full name:\**[ \t]*(.*)$/m);
+            const fullName = nameMatch ? nameMatch[1].trim() : '';
+            if (fullName.length < 2 || !/[^\s\p{P}]/u.test(fullName)) {
+              body += `\n> ⚠️ **PR description:** fill in \`Full name:\` in the submission form (edit the first comment of this PR).\n`;
+            }
+
             // ---------- one comment per PR: update it if it exists
             const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number: prNumber, per_page: 100 });
             const mine = comments.find(c => c.user && c.user.login === 'github-actions[bot]' && typeof c.body === 'string' && c.body.startsWith(MARKER));
