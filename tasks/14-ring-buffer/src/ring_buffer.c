@@ -30,9 +30,18 @@ rb_status_t rb_push(ring_buffer_t *rb, uint8_t byte)
 
 rb_status_t rb_pop(ring_buffer_t *rb, uint8_t *out)
 {
-    (void)rb;
-    (void)out;
+    if ( rb == NULL || out == NULL )
+      return RB_ERR_NULL;
+    if( rb->count == 0 )
+      return RB_ERR_EMPTY;
+    *out = rb->buf[ rb->tail ];
+    rb->tail++;
+    if ( rb->tail == rb->size ){
+       rb->tail = 0;
+    }
+    rb->count--;
     return RB_OK;
+
 }
 
 rb_status_t rb_peek(const ring_buffer_t *rb, uint8_t *out)
