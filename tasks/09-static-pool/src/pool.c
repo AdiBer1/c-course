@@ -28,8 +28,31 @@ void *pool_alloc(void)
 
 bool pool_free(void *block)
 {
-    (void)block;
-    return false;
+    if (block == NULL) {
+        return false;
+    }
+
+    uint8_t *p = (uint8_t *)block;
+    uint8_t *start = pool_storage;
+    uint8_t *end = pool_storage + (POOL_BLOCK_SIZE * POOL_BLOCK_COUNT);
+
+    if (p < start || p >= end) {
+        return false;
+    }
+
+    ptrdiff_t offset = p - start;
+    if (offset % POOL_BLOCK_SIZE != 0) {
+        return false;
+    }
+
+    size_t index = (size_t)offset / POOL_BLOCK_SIZE;
+
+    if (!block_allocated[index]) {
+        return false; // Double free
+    }
+
+    block_allocated[index] = false;
+    return true;
 }
 
 size_t pool_free_count(void)
