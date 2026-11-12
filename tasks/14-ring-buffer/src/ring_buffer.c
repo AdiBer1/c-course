@@ -96,10 +96,13 @@ if ( rb ==NULL )
 
 size_t rb_write(ring_buffer_t *rb, const uint8_t *data, size_t len)
 {
-    (void)rb;
-    (void)data;
-    (void)len;
-    return 0;
+   if ( rb == NULL || data == NULL )
+      return 0;
+    for ( size_t i=0; i<len; i++ ){
+       if ( rb_push(rb, data[i]) != RB_OK )
+         return i;
+    }
+    return len;
 }
 
 size_t rb_read(ring_buffer_t *rb, uint8_t *dst, size_t len)
