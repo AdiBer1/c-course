@@ -17,7 +17,12 @@ void pool_init(void)
 
 void *pool_alloc(void)
 {
-    (void)pool_storage;
+    for (size_t i = 0; i < POOL_BLOCK_COUNT; i++) {
+        if (!block_allocated[i]) {
+            block_allocated[i] = true;
+            return &pool_storage[i * POOL_BLOCK_SIZE];
+        }
+    }
     return NULL;
 }
 
