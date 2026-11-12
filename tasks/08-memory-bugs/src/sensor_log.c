@@ -22,7 +22,9 @@ void log_init(void)
 
 bool log_add(int16_t value)
 {
-    if (count > LOG_CAPACITY) {
+    /* FIX 1: was `count > LOG_CAPACITY`, which let count == 8 through
+     * and wrote values[8], one past the end of the array. */
+    if (count >= LOG_CAPACITY) {
         return false;
     }
     values[count] = value;
@@ -37,7 +39,9 @@ size_t log_count(void)
 
 int16_t log_get(size_t index)
 {
-    if (index > count) {
+    /* FIX 2: was `index > count`; index == count read a slot that holds
+     * no reading (and values[8] when the log is full). */
+    if (index >= count) {
         return 0;
     }
     return values[index];
@@ -45,18 +49,28 @@ int16_t log_get(size_t index)
 
 int16_t log_average(void)
 {
-    int16_t sum = 0;
+    /* FIX 4: was a division by zero when the log is empty. */
+    if (count == 0u) {
+        return 0;
+    }
+    /* FIX 3: was `int16_t sum`; 8 readings can add up to 8 * 32767 = 262136,
+     * which does not fit in int16_t. int32_t holds any possible sum. */
+    int32_t sum = 0;
     for (size_t i = 0; i < count; i++) {
         sum += values[i];
     }
-    return (int16_t)(sum / (int16_t)count);
+    return (int16_t)(sum / (int32_t)count);
 }
 
 size_t log_copy_last(int16_t *dst, size_t dst_len, size_t n)
 {
-    (void)dst_len;
     if (n > count) {
         n = count;
+    }
+    /* FIX 5: dst_len was ignored (`(void)dst_len;`), so asking for more
+     * readings than dst can hold wrote past the end of the caller's buffer. */
+    if (n > dst_len) {
+        n = dst_len;
     }
     size_t first = count - n;
     for (size_t i = 0; i < n; i++) {
@@ -90,7 +104,10 @@ static void build_label(char *buf)
 const char *log_label(void)
 {
     if (label == NULL) {
-        char buf[16];
+        /* FIX 6: buf was a local (stack) array, so `label` pointed to memory
+         * that stopped existing when this function returned (dangling
+         * pointer). `static` gives it the lifetime of the whole program. */
+        static char buf[16];
         build_label(buf);
         label = buf;
     }
