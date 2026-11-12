@@ -12,8 +12,7 @@ unsigned bits_count_ones(uint32_t x)
 
 bool bits_is_power_of_two(uint32_t x)
 {
-    (void)x;
-    return false;
+       return (x != 0u) && ((x & (x - 1u)) == 0u);
 }
 
 uint8_t bits_swap_nibbles(uint8_t x)
