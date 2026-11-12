@@ -90,6 +90,7 @@ bool uart_rx_read_line(char *dst, size_t dst_size)
     return true;
 }
 
+
 size_t uart_rx_available(void)
 {
     return rx_count;
