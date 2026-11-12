@@ -24,12 +24,16 @@ btn_event_t debounce_update(debounce_t *d, bool raw_pressed)
 
 btn_state_t debounce_state(const debounce_t *d)
 {
-    (void)d;
-    return BTN_RELEASED;
+    if (d == NULL) {
+        return BTN_RELEASED;
+    }
+    return d->stable;
 }
 
 uint32_t debounce_press_count(const debounce_t *d)
 {
-    (void)d;
-    return 0u;
+    if (d == NULL) {
+        return 0u;
+    }
+    return d->presses;
 }
