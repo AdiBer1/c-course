@@ -16,8 +16,15 @@ rb_status_t rb_init(ring_buffer_t *rb, uint8_t *storage, size_t size)
 
 rb_status_t rb_push(ring_buffer_t *rb, uint8_t byte)
 {
-    (void)rb;
-    (void)byte;
+     if ( rb == NULL )
+      return RB_ERR_NULL; 
+    if ( rb->count == rb -> size )
+       return RB_ERR_FULL;
+    rb->buf[rb->head] = byte;
+    rb->count++;
+    rb->head++;
+    if ( rb->head == rb->size)
+       rb->head = 0;
     return RB_OK;
 }
 
