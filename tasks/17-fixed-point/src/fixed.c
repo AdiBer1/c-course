@@ -4,6 +4,25 @@
 
 /* TODO: implement every function. Write a rounding division helper first. */
 
+static int64_t div_round(int64_t num, int64_t den)
+{
+    if ((num >= 0 && den > 0) || (num < 0 && den < 0)) {
+        return (num + (den / 2)) / den;
+    }
+    return (num - (den / 2)) / den;
+}
+
+static q16_t clamp_q16(int64_t val)
+{
+    if (val > INT32_MAX) {
+        return Q16_MAX;
+    }
+    if (val < INT32_MIN) {
+        return Q16_MIN;
+    }
+    return (q16_t)val;
+}
+
 q16_t q16_from_int(int32_t x)
 {
     if (x < -32768) {
@@ -17,40 +36,19 @@ q16_t q16_from_int(int32_t x)
 
 int32_t q16_to_int(q16_t x)
 {
-    if (x >= 0) {
-        return (int32_t)(((int64_t)x + 0x8000) >> 16);
-    } else {
-        return (int32_t)(((int64_t)x - 0x8000) >> 16);
-    }
+    return (int32_t)div_round((int64_t)x, 65536);
 }
 
 q16_t q16_from_milli(int32_t milli)
 {
-    int64_t prod = (int64_t)milli * Q16_ONE;
-    int64_t rounded = 0;
-    if (prod >= 0) {
-        rounded = (prod + 500) / 1000;
-    } else {
-        rounded = (prod - 500) / 1000;
-    }
-    if (rounded > INT32_MAX) {
-        return Q16_MAX;
-    }
-    if (rounded < INT32_MIN) {
-        return Q16_MIN;
-    }
-    return (q16_t)rounded;
+    int64_t prod = (int64_t)milli * 65536;
+    return clamp_q16(div_round(prod, 1000));
 }
 
 int32_t q16_to_milli(q16_t x)
 {
     int64_t prod = (int64_t)x * 1000;
-    int64_t rounded = 0;
-    if (prod >= 0) {
-        rounded = (prod + 32768) / 65536;
-    } else {
-        rounded = (prod - 32768) / 65536;
-    }
+    int64_t rounded = div_round(prod, 65536);
     if (rounded > INT32_MAX) {
         return INT32_MAX;
     }
@@ -62,47 +60,18 @@ int32_t q16_to_milli(q16_t x)
 
 q16_t q16_add(q16_t a, q16_t b)
 {
-    int64_t sum = (int64_t)a + (int64_t)b;
-    if (sum > INT32_MAX) {
-        return Q16_MAX;
-    }
-    if (sum < INT32_MIN) {
-        return Q16_MIN;
-    }
-    return (q16_t)sum;
+    return clamp_q16((int64_t)a + (int64_t)b);
 }
 
 q16_t q16_sub(q16_t a, q16_t b)
 {
-    int64_t diff = (int64_t)a - (int64_t)b;
-    if (diff > INT32_MAX) {
-        return Q16_MAX;
-    }
-    if (diff < INT32_MIN) {
-        return Q16_MIN;
-    }
-    return (q16_t)diff;
+    return clamp_q16((int64_t)a - (int64_t)b);
 }
 
 q16_t q16_mul(q16_t a, q16_t b)
 {
     int64_t prod = (int64_t)a * (int64_t)b;
-    
-    // Round to nearest, halves away from zero
-    if (prod >= 0) {
-        prod += 0x8000;
-    } else {
-        prod -= 0x8000;
-    }
-    
-    int64_t res = prod >> 16;
-    if (res > INT32_MAX) {
-        return Q16_MAX;
-    }
-    if (res < INT32_MIN) {
-        return Q16_MIN;
-    }
-    return (q16_t)res;
+    return clamp_q16(div_round(prod, 65536));
 }
 
 q16_t q16_div(q16_t a, q16_t b)
@@ -110,28 +79,13 @@ q16_t q16_div(q16_t a, q16_t b)
     if (b == 0) {
         if (a > 0) {
             return Q16_MAX;
-        } else if (a < 0) {
-            return Q16_MIN;
-        } else {
-            return 0;
         }
+        if (a < 0) {
+            return Q16_MIN;
+        }
+        return 0;
     }
-    
-    int64_t numerator = (int64_t)a * Q16_ONE;
-    int64_t res = 0;
-    
-    // Rounding division with halves away from zero
-    if ((numerator >= 0 && b > 0) || (numerator < 0 && b < 0)) {
-        res = (numerator + (b / 2)) / b;
-    } else {
-        res = (numerator - (b / 2)) / b;
-    }
-    
-    if (res > INT32_MAX) {
-        return Q16_MAX;
-    }
-    if (res < INT32_MIN) {
-        return Q16_MIN;
-    }
-    return (q16_t)res;
+
+    int64_t numerator = (int64_t)a * 65536;
+    return clamp_q16(div_round(numerator, (int64_t)b));
 }
