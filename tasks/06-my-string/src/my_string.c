@@ -36,7 +36,21 @@ size_t my_strlcpy(char *dst, const char *src, size_t dst_size)
 
 int my_strcmp(const char *a, const char *b)
 {
-    (void)a;
-    (void)b;
-    return 0;
+   if (a == NULL) {
+        a = "";
+    }
+    if (b == NULL) {
+        b = "";
+    }
+
+    const unsigned char *una = (const unsigned char *)a;
+    const unsigned char *unb = (const unsigned char *)b;
+
+    while (*una == *unb && *una != '\0')
+    {
+        una++;
+        unb++;
+    }
+
+    return (int)*una - (int)*unb;
 }
