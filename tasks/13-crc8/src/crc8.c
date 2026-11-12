@@ -7,7 +7,7 @@ uint8_t crc8_update(uint8_t crc, uint8_t byte)
     crc ^= byte;
     for (int i = 0; i < 8; i++) {
         if ((crc & 0x80u) != 0) {
-            crc = (uint8_t)((crc << 1) ^ CRC8_POLY);
+            crc = (uint8_t)((uint8_t)(crc << 1) ^ CRC8_POLY);
         } else {
             crc = (uint8_t)(crc << 1);
         }
