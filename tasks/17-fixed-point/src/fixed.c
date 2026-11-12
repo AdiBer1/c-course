@@ -86,14 +86,52 @@ q16_t q16_sub(q16_t a, q16_t b)
 
 q16_t q16_mul(q16_t a, q16_t b)
 {
-    (void)a;
-    (void)b;
-    return 0;
+    int64_t prod = (int64_t)a * (int64_t)b;
+    
+    // Round to nearest, halves away from zero
+    if (prod >= 0) {
+        prod += 0x8000;
+    } else {
+        prod -= 0x8000;
+    }
+    
+    int64_t res = prod >> 16;
+    if (res > INT32_MAX) {
+        return Q16_MAX;
+    }
+    if (res < INT32_MIN) {
+        return Q16_MIN;
+    }
+    return (q16_t)res;
 }
 
 q16_t q16_div(q16_t a, q16_t b)
 {
-    (void)a;
-    (void)b;
-    return 0;
+    if (b == 0) {
+        if (a > 0) {
+            return Q16_MAX;
+        } else if (a < 0) {
+            return Q16_MIN;
+        } else {
+            return 0;
+        }
+    }
+    
+    int64_t numerator = (int64_t)a * Q16_ONE;
+    int64_t res = 0;
+    
+    // Rounding division with halves away from zero
+    if ((numerator >= 0 && b > 0) || (numerator < 0 && b < 0)) {
+        res = (numerator + (b / 2)) / b;
+    } else {
+        res = (numerator - (b / 2)) / b;
+    }
+    
+    if (res > INT32_MAX) {
+        return Q16_MAX;
+    }
+    if (res < INT32_MIN) {
+        return Q16_MIN;
+    }
+    return (q16_t)res;
 }
