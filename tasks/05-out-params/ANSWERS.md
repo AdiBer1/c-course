@@ -1,20 +1,21 @@
 # Task 05 — Understanding questions
 
-Answer in your own words, a few sentences each. Write under each `Answer:` line.
-
-## Q1. Why can't `void swap_i32(int32_t a, int32_t b)` (without pointers) swap the caller's variables? Explain what is copied where.
+## Q1. Why can't swap_i32 without pointers swap the caller's variables?
 
 Answer:
+Because C passes copies of the values. Changing the copies does not change the original variables. Pointers let us change the originals.
 
-## Q2. Why does `min_max_i16` take `const int16_t *values` but `int16_t *min_out` without `const`? What would the compiler do if you tried to write `values[0] = 0;`?
-
-Answer:
-
-## Q3. The rule "on error, do not write to the outputs" seems strict. Describe a situation in firmware where breaking it causes a real bug.
+## Q2. Why does min_max_i16 use const for values but not for the output pointers?
 
 Answer:
+The array is only for reading, so we use const. The output pointers need to store the results. Changing values[0] causes a compiler error.
 
-## Q4. Why do embedded APIs usually return a status code and put the result in an output parameter, instead of returning the result and using a special value like -1 for errors?
+## Q3. How can changing outputs on error cause a bug in firmware?
 
 Answer:
+A sensor might fail to read the temperature but still change the output. The system could use a wrong value and control a device incorrectly.
 
+## Q4. Why return a status code instead of using -1 for errors?
+
+Answer:
+Because -1 can also be a valid result. A status code clearly shows if the operation succeeded or failed.
