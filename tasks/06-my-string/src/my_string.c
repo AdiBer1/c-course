@@ -21,7 +21,6 @@ size_t my_strlcpy(char *dst, const char *src, size_t dst_size)
         return src_len;
     }
 
-    /* Copy at most dst_size - 1 chars, leaving room for the '\0'. */
     size_t i = 0U;
     while (i < dst_size - 1U && source[i] != '\0') {
         dst[i] = source[i];
