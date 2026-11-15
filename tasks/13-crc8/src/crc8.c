@@ -30,6 +30,6 @@ bool crc8_frame_ok(const uint8_t *frame, size_t len)
     if (frame == NULL || len < 2u) {
         return false;
     }
-    /* All bytes except the last are data; the last byte is the CRC. */
+
     return crc8(frame, len - 1u) == frame[len - 1u];
 }
