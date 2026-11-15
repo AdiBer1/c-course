@@ -25,7 +25,12 @@ int32_t f10_to_c10(int32_t f10)
 
 uint16_t adc_to_mv(uint16_t raw)
 {
-    uint32_t n = (uint32_t)raw * 3300u;
+    uint32_t r = raw;
+    uint32_t n;
 
+    if (r > 4095u) {
+        r = 4095u; /* clamp to 12 bits */
+    }
+    n = r * 3300u;
     return (uint16_t)((n + 2047u) / 4095u);
 }
