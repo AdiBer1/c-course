@@ -2,45 +2,63 @@
 
 #include <stddef.h>
 
-/* TODO: implement the drivers using ONLY led->gpio->write / button->gpio->read. */
+static gpio_level_t level_for(bool on, bool active_low)
+{
+    bool drive_high = active_low ? !on : on;
+    return drive_high ? GPIO_HIGH : GPIO_LOW;
+}
 
 bool led_init(led_t *led, const hal_gpio_t *gpio, uint8_t pin, bool active_low)
 {
-    (void)led;
-    (void)gpio;
-    (void)pin;
-    (void)active_low;
-    return false;
+    if (led == NULL || gpio == NULL || gpio->write == NULL) {
+        return false;
+    }
+    led->gpio = gpio;
+    led->pin = pin;
+    led->active_low = active_low;
+    led->on = false;
+    gpio->write(gpio->ctx, pin, level_for(false, active_low));
+    return true;
 }
 
 void led_set(led_t *led, bool on)
 {
-    (void)led;
-    (void)on;
+    if (led == NULL || led->gpio == NULL || led->gpio->write == NULL) {
+        return;
+    }
+    led->on = on;
+    led->gpio->write(led->gpio->ctx, led->pin, level_for(on, led->active_low));
 }
 
 void led_toggle(led_t *led)
 {
-    (void)led;
+    if (led == NULL) {
+        return;
+    }
+    led_set(led, !led->on);
 }
 
 bool led_is_on(const led_t *led)
 {
-    (void)led;
-    return false;
+    return led != NULL && led->on;
 }
 
 bool button_init(button_t *button, const hal_gpio_t *gpio, uint8_t pin, bool active_low)
 {
-    (void)button;
-    (void)gpio;
-    (void)pin;
-    (void)active_low;
-    return false;
+    if (button == NULL || gpio == NULL || gpio->read == NULL) {
+        return false;
+    }
+    button->gpio = gpio;
+    button->pin = pin;
+    button->active_low = active_low;
+    return true;
 }
 
 bool button_is_pressed(const button_t *button)
 {
-    (void)button;
-    return false;
+    if (button == NULL || button->gpio == NULL || button->gpio->read == NULL) {
+        return false;
+    }
+    gpio_level_t level = button->gpio->read(button->gpio->ctx, button->pin);
+    return button->active_low ? (level == GPIO_LOW) : (level == GPIO_HIGH);
 }
