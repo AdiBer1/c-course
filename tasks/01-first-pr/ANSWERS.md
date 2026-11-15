@@ -2,15 +2,12 @@
 
 Answer in your own words, a few sentences each. Write under each `Answer:` line.
 
-## Q1. `make score` already gives you a score on your laptop. Why does CI build and test your code again on a fresh machine instead of trusting your local result?
+## Q1. Why do we create a new branch for every task instead of working directly on `main`?
 
 Answer:
+Creating a separate branch isolates changes for a specific feature or bug fix. It prevents untested code from breaking the stable `main` branch, enables clean Pull Requests for CI testing and code reviews, and allows multiple tasks to be developed in parallel without branch conflicts.
 
-## Q2. Your PR may only change `src/max3.c` and `ANSWERS.md`. Why is it important that you cannot change the tests (think about what a test is *for*)?
-
-Answer:
-
-## Q3. In `max3`, the parameters `a`, `b`, `c` are copies of the caller's values. What does that mean if your function changes `a`? Does the caller notice?
+## Q2. What does CI (Continuous Integration) do when you open a Pull Request?
 
 Answer:
-
+CI automatically triggers automated workflows upon PR submission to build the code, run test suites, check for compiler warnings and static analysis findings, and verify that the proposed changes touch only allowed files before merging.
