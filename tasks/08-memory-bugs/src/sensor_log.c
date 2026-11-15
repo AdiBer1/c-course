@@ -22,7 +22,7 @@ void log_init(void)
 
 bool log_add(int16_t value)
 {
-    if (count > LOG_CAPACITY) {
+    if (count >= LOG_CAPACITY) { /* BUG 1 fixed: was >, allowed values[8] */
         return false;
     }
     values[count] = value;
@@ -37,7 +37,7 @@ size_t log_count(void)
 
 int16_t log_get(size_t index)
 {
-    if (index > count) {
+    if (index >= count) { /* BUG 2 fixed: was >, read values[count] */
         return 0;
     }
     return values[index];
@@ -45,18 +45,23 @@ int16_t log_get(size_t index)
 
 int16_t log_average(void)
 {
-    int16_t sum = 0;
+    if (count == 0u) { /* BUG 3 fixed: division by zero on an empty log */
+        return 0;
+    }
+    int32_t sum = 0; /* BUG 4 fixed: int16_t overflowed (8 * 32767 does not fit) */
     for (size_t i = 0; i < count; i++) {
         sum += values[i];
     }
-    return (int16_t)(sum / (int16_t)count);
+    return (int16_t)(sum / (int32_t)count);
 }
 
 size_t log_copy_last(int16_t *dst, size_t dst_len, size_t n)
 {
-    (void)dst_len;
     if (n > count) {
         n = count;
+    }
+    if (n > dst_len) { /* BUG 5 fixed: dst_len was ignored, wrote past dst */
+        n = dst_len;
     }
     size_t first = count - n;
     for (size_t i = 0; i < n; i++) {
@@ -90,7 +95,7 @@ static void build_label(char *buf)
 const char *log_label(void)
 {
     if (label == NULL) {
-        char buf[16];
+        static char buf[16]; /* BUG 6 fixed: was a stack buffer -> dangling pointer */
         build_label(buf);
         label = buf;
     }
