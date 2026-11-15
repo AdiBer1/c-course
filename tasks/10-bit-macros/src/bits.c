@@ -4,7 +4,7 @@ unsigned bits_count_ones(uint32_t x)
 {
     unsigned count = 0u;
     while (x != 0u) {
-        x &= x - 1u; /* clears the lowest 1-bit */
+        x &= x - 1u;
         count++;
     }
     return count;
@@ -12,7 +12,7 @@ unsigned bits_count_ones(uint32_t x)
 
 bool bits_is_power_of_two(uint32_t x)
 {
-    /* A power of two has exactly one 1-bit, so x & (x - 1) clears it to 0. */
+
     return x != 0u && (x & (x - 1u)) == 0u;
 }
 

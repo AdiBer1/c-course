@@ -38,7 +38,6 @@
  * so FIELD_MASK(0, 32) == 0xFFFFFFFFu must work (careful: shifting a 32-bit
  * value by 32 is undefined behaviour).
  */
-/* width >= 1, so the right shift is at most 31: never the undefined shift by 32. */
 #define FIELD_MASK(pos, width) ((uint32_t)(0xFFFFFFFFu >> (32u - (uint32_t)(width))) << (pos))
 
 /* The value of the field: FIELD_GET(0x12345678u, 8, 8) == 0x56. */
