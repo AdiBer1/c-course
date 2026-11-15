@@ -1,6 +1,5 @@
 #include "ring_buffer.h"
 
-/* Advance an index by one, wrapping to 0 at the end of the array. */
 static size_t next_index(size_t index, size_t size)
 {
     index++;
