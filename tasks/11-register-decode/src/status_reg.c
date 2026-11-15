@@ -2,7 +2,6 @@
 
 #include <stddef.h>
 
-/* Field positions and widths, defined once. */
 #define READY_POS    0u
 #define ERROR_POS    1u
 #define OVERRUN_POS  2u
@@ -22,8 +21,8 @@
 #define MODE_INVALID_RAW 0xFu
 #define TEMP_MIN         (-2048)
 #define TEMP_MAX         2047
-#define TEMP_SIGN_BIT    0x800u   /* bit 11 of the 12-bit field */
-#define TEMP_RANGE       4096     /* 2^12 */
+#define TEMP_SIGN_BIT    0x800u
+#define TEMP_RANGE       4096
 
 status_t status_decode(uint32_t reg)
 {
@@ -38,7 +37,6 @@ status_t status_decode(uint32_t reg)
 
     s.fifo_level = (uint8_t)GET(reg, FIFO_POS, FIFO_WIDTH);
 
-    /* 12-bit two's complement: if the sign bit is set, the value is raw - 4096. */
     int32_t temp = (int32_t)GET(reg, TEMP_POS, TEMP_WIDTH);
     if (((uint32_t)temp & TEMP_SIGN_BIT) != 0u) {
         temp -= TEMP_RANGE;
@@ -74,19 +72,18 @@ uint32_t status_encode(const status_t *s)
     } else if (temp > TEMP_MAX) {
         temp = TEMP_MAX;
     }
-    /* Converting a negative value to uint32_t gives its two's complement;
-       PUT keeps only the low 12 bits of it. */
+
     reg |= PUT((uint32_t)temp, TEMP_POS, TEMP_WIDTH);
 
     reg |= PUT(s->version, VERSION_POS, VERSION_WIDTH);
-    return reg; /* the reserved bit 3 stays 0 */
+    return reg;
 }
 
 status_t status_read(const volatile uint32_t *reg)
 {
     uint32_t value = 0u;
     if (reg != NULL) {
-        value = *reg; /* the ONE read of the hardware register */
+        value = *reg;
     }
     return status_decode(value);
 }
@@ -99,9 +96,9 @@ int16_t status_temp_celsius(const status_t *s)
     int32_t t = s->temp_sixteenths;
     int32_t c;
     if (t >= 0) {
-        c = (t + 8) / 16;          /* +8 = half of 16: rounds halves up */
+        c = (t + 8) / 16;
     } else {
-        c = -((-t + 8) / 16);      /* mirror image: halves away from zero */
+        c = -((-t + 8) / 16);
     }
     return (int16_t)c;
 }
