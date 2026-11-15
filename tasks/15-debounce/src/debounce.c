@@ -22,18 +22,16 @@ btn_event_t debounce_update(debounce_t *d, bool raw_pressed)
     btn_state_t raw = raw_pressed ? BTN_PRESSED : BTN_RELEASED;
 
     if (raw == d->stable) {
-        /* Input agrees with the stable state: any glitch is over. */
+
         d->counter = 0u;
         return BTN_EVENT_NONE;
     }
 
-    /* Input disagrees: count one more tick in a row. */
     d->counter++;
     if (d->counter < d->threshold) {
         return BTN_EVENT_NONE;
     }
 
-    /* Disagreed for `threshold` ticks in a row: accept the change. */
     d->counter = 0u;
     d->stable = raw;
     if (raw == BTN_PRESSED) {
