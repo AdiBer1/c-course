@@ -53,7 +53,7 @@ op_status_t sort3_i32(int32_t *a, int32_t *b, int32_t *c)
     if (a == NULL || b == NULL || c == NULL) {
         return OP_ERR_NULL;
     }
-    /* Three compare-and-swap steps (a small sorting network). */
+
     if (*a > *b) {
         swap_i32(a, b);
     }
